@@ -1,0 +1,76 @@
+body {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  font-family: system-ui, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+  line-height: 1.8;
+  color: #1f2328;
+}
+
+h1, h2, h3 {
+  line-height: 1.4;
+}
+
+h2 {
+  margin-top: 2.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #d0d7de;
+}
+
+a {
+  color: #0969da;
+}
+
+blockquote {
+  margin: 1.5rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #0969da;
+  background: #f6f8fa;
+  color: inherit;
+  font-style: normal;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  font-size: 0.9em;
+}
+
+:not(pre) > code {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: #eff1f3;
+}
+
+pre {
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #f6f8fa;
+  line-height: 1.5;
+}
+
+table {
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #d0d7de;
+}
+
+th {
+  background: #f6f8fa;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  margin: 1.5rem auto;
+}
+
+hr {
+  margin: 3rem 0 1rem;
+  border: none;
+  border-top: 1px solid #d0d7de;
+}

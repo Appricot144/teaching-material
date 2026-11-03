@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Markdown の教材を HTML に変換し、dist/ に出力する。
+# mermaid コードブロックは SVG に変換し、<img> で埋め込む。
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+dist="$root/dist"
+config="$root/build"
+mmdc="$root/node_modules/.bin/mmdc"
+
+if [[ ! -x "$mmdc" ]]; then
+  echo "mmdc が見つかりません。先に npm install を実行してください。" >&2
+  exit 1
+fi
+
+# 変換する Markdown を列挙する（リポジトリの README.md と、教材以外のディレクトリは除く）
+find_sources() {
+  find "$root" -name '*.md' \
+    -not -path "$root/README.md" \
+    -not -path "$root/.git/*" \
+    -not -path "$root/node_modules/*" \
+    -not -path "$root/build/*" \
+    -not -path "$dist/*" \
+    | sort
+}
+
+# README.md は、ブラウザで開いたときの入口になるよう index.html にする
+output_path() {
+  local rel="$1"
+  if [[ "$(basename "$rel")" == README.md ]]; then
+    rel="$(dirname "$rel")/index.md"
+  fi
+  echo "$dist/${rel%.md}.html"
+}
+
+# 出力先から dist/ の直下へ戻る相対パス（例: servlet/01/a.md なら ../../）
+path_to_dist() {
+  local rel="$1" depth
+  depth="$(tr -cd '/' <<< "$rel" | wc -c)"
+  for ((i = 0; i < depth; i++)); do
+    printf '../'
+  done
+}
+
+# mermaid コードブロックを SVG に置き換えた Markdown を作る
+render_mermaid() {
+  local src="$1" md="$2"
+  if grep -q '^```mermaid' "$src"; then
+    "$mmdc" --quiet --input "$src" --output "$md" --outputFormat svg \
+      --configFile "$config/mermaid.json"
+  else
+    cp "$src" "$md"
+  fi
+}
+
+# Markdown を HTML に変換する
+render_html() {
+  local md="$1" html="$2" rel="$3" title
+  title="$(grep -m1 '^# ' "$md" | sed 's/^# //; s/`//g')"
+  pandoc "$md" \
+    --from gfm \
+    --to html5 \
+    --standalone \
+    --variable lang=ja \
+    --metadata pagetitle="$title" \
+    --css "$(path_to_dist "$rel")assets/style.css" \
+    --lua-filter "$config/links.lua" \
+    --output "$html"
+}
+
+rm -rf "$dist"
+mkdir -p "$dist/assets"
+cp "$config/style.css" "$dist/assets/style.css"
+
+count=0
+while IFS= read -r src; do
+  rel="${src#"$root"/}"
+  html="$(output_path "$rel")"
+  md="${html%.html}.md"   # SVG を HTML と同じディレクトリに出力するため、中間ファイルも同じ場所に置く
+
+  mkdir -p "$(dirname "$html")"
+  render_mermaid "$src" "$md"
+  render_html "$md" "$html" "$rel"
+  rm "$md"
+
+  echo "${html#"$root"/}"
+  count=$((count + 1))
+done < <(find_sources)
+
+echo "$count ファイルを変換しました"
