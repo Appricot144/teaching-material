@@ -3,7 +3,8 @@
   "private": true,
   "description": "Markdown で書いた教材を HTML に変換する",
   "scripts": {
-    "build": "bin/build"
+    "build": "bin/build",
+    "test": "test/build.sh"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "12.2.0"

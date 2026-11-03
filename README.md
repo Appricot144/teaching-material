@@ -12,11 +12,12 @@ teaching-materials/
 │  ├─ links.lua       .md へのリンクを .html へのリンクに置き換える pandoc フィルター
 │  ├─ mermaid.json    Mermaid の描画設定
 │  └─ style.css       HTML のスタイル
+├─ test/build.sh      ビルド結果のテスト
 ├─ .puppeteerrc.cjs   mmdc が使う Chromium の設定
 └─ dist/              ビルドの出力先（git では管理しない）
 ```
 
-教材はトピックごとにディレクトリを分けます。新しいトピックを追加するときは、リポジトリ直下にディレクトリを作り、その中に Markdown を置きます。
+教材はトピックごとにディレクトリを分けます。新しいトピックを追加するときは、リポジトリ直下にディレクトリを作り、その中に Markdown を置きます。リポジトリ直下に置いた Markdown は、ビルドの対象になりません。
 
 ## 文章の書き方
 
@@ -52,6 +53,12 @@ npm install
 npm run build
 ```
 
+ビルド結果が次の仕様を満たしているかは、次のコマンドで確かめられます。ビルドも合わせて実行します。
+
+```sh
+npm test
+```
+
 ### ビルドの処理
 
 `bin/build` は、教材の Markdown ごとに次の処理を行います。
@@ -61,6 +68,25 @@ npm run build
 3. `.md` へのリンクを `.html` へのリンクに置き換える
 
 各ディレクトリの `README.md` は `index.html` として出力します。また、ビルドのたびに `dist/` を作り直します。
+
+### 出力の仕様
+
+`dist/` の下のトピックごとのディレクトリは、それだけで完結したドキュメントパッケージにします。ディレクトリをコピーしたり、zip にして渡したりしても、そのまま読めます。
+
+```text
+dist/
+└─ servlet/
+   ├─ index.html                README.md から作る入口
+   ├─ assets/style.css          トピックごとに同梱する CSS
+   └─ 05-jsp/
+      ├─ 01-what-is-jsp.html    ../assets/style.css を読み込む
+      └─ 01-what-is-jsp-1.svg   HTML と同じディレクトリに置く図
+```
+
+- `dist/` の直下には、トピックのディレクトリだけを置きます。
+- CSS は、各トピックの `assets/` に同梱します。
+- HTML は、同じトピックの CSS を相対パスで読み込みます。
+- 図の SVG は、それを使う HTML と同じディレクトリに置きます。
 
 ## 読み方
 

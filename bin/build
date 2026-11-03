@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Markdown の教材を HTML に変換し、dist/ に出力する。
 # mermaid コードブロックは SVG に変換し、<img> で埋め込む。
+# dist/ の下のトピックごとのディレクトリは、CSS を含めてそれだけで完結させる。
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -13,10 +14,9 @@ if [[ ! -x "$mmdc" ]]; then
   exit 1
 fi
 
-# 変換する Markdown を列挙する（リポジトリの README.md と、教材以外のディレクトリは除く）
+# 変換する Markdown を列挙する（トピックのディレクトリの中だけを対象にし、教材以外のディレクトリは除く）
 find_sources() {
-  find "$root" -name '*.md' \
-    -not -path "$root/README.md" \
+  find "$root" -mindepth 2 -name '*.md' \
     -not -path "$root/.git/*" \
     -not -path "$root/node_modules/*" \
     -not -path "$root/build/*" \
@@ -33,13 +33,27 @@ output_path() {
   echo "$dist/${rel%.md}.html"
 }
 
-# 出力先から dist/ の直下へ戻る相対パス（例: servlet/01/a.md なら ../../）
-path_to_dist() {
+# 教材のパスから、トピック名を取り出す（例: servlet/01/a.md なら servlet）
+topic_of() {
+  echo "${1%%/*}"
+}
+
+# 出力先からトピックのディレクトリへ戻る相対パス（例: servlet/01/a.md なら ../）
+path_to_topic() {
   local rel="$1" depth
-  depth="$(tr -cd '/' <<< "$rel" | wc -c)"
+  depth="$(($(tr -cd '/' <<< "$rel" | wc -c) - 1))"
   for ((i = 0; i < depth; i++)); do
     printf '../'
   done
+}
+
+# トピックのディレクトリに CSS を同梱する（初回だけコピーする）
+copy_assets() {
+  local assets="$dist/$1/assets"
+  if [[ ! -f "$assets/style.css" ]]; then
+    mkdir -p "$assets"
+    cp "$config/style.css" "$assets/style.css"
+  fi
 }
 
 # mermaid コードブロックを SVG に置き換えた Markdown を作る
@@ -63,14 +77,12 @@ render_html() {
     --standalone \
     --variable lang=ja \
     --metadata pagetitle="$title" \
-    --css "$(path_to_dist "$rel")assets/style.css" \
+    --css "$(path_to_topic "$rel")assets/style.css" \
     --lua-filter "$config/links.lua" \
     --output "$html"
 }
 
 rm -rf "$dist"
-mkdir -p "$dist/assets"
-cp "$config/style.css" "$dist/assets/style.css"
 
 count=0
 while IFS= read -r src; do
@@ -79,6 +91,7 @@ while IFS= read -r src; do
   md="${html%.html}.md"   # SVG を HTML と同じディレクトリに出力するため、中間ファイルも同じ場所に置く
 
   mkdir -p "$(dirname "$html")"
+  copy_assets "$(topic_of "$rel")"
   render_mermaid "$src" "$md"
   render_html "$md" "$html" "$rel"
   rm "$md"
