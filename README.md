@@ -19,6 +19,7 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 ## 書き方
 
 - 教材は、リポジトリ直下のトピックのディレクトリに置きます。直下の Markdown はビルドされません。
+- 下書きは `DRAFT` で始まる名前（`DRAFT-what-is-di.md` など）にします。下書きはビルドされません。
 - 図は Mermaid のコードブロックで書きます。
 - 他の教材へのリンクは、`.md` ファイルへの相対パスで書きます。
 
@@ -27,6 +28,16 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 - pandoc
 - Chromium（`/usr/bin/chromium`。場所が違う場合は `.puppeteerrc.cjs` を変更する）
 
+## ビルドのしかた
+
+```bash
+bin/build                  # すべてのトピックをビルドする
+bin/build servlet          # servlet/ だけをビルドする
+bin/build servlet spring   # 複数のトピックを指定する
+```
+
+`npm run build -- servlet` のように、npm からも指定できます。
+
 ## ビルドの仕様
 
 教材の Markdown ごとに、次の処理を行います。
@@ -34,7 +45,9 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 1. Mermaid のコードブロックを SVG に変換する
 2. pandoc で HTML に変換し、`.md` へのリンクを `.html` に置き換える
 
-`README.md` は `index.html` として出力します。`dist/` はビルドのたびに作り直します。
+`README.md` は `index.html` として出力します。
+
+ビルドのたびに出力を作り直します。トピックを指定しないときは `dist/` 全体を、指定したときは `dist/` の下のそのトピックのディレクトリだけを作り直します。
 
 `dist/` の下のトピックのディレクトリは、それだけで読めるように完結させます。
 

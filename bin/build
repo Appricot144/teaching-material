@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Markdown の教材を HTML に変換し、dist/ に出力する。
+#
+#   bin/build                  すべてのトピックをビルドし、dist/ 全体を作り直す
+#   bin/build servlet spring   指定したトピックだけをビルドし、dist/ の下のそのトピックだけを作り直す
+#
 # mermaid コードブロックは SVG に変換し、<img> で埋め込む。
 # dist/ の下のトピックごとのディレクトリは、CSS を含めてそれだけで完結させる。
 set -euo pipefail
@@ -14,15 +18,27 @@ if [[ ! -x "$mmdc" ]]; then
   exit 1
 fi
 
-# 変換する Markdown を列挙する（トピックのディレクトリの中だけを対象にし、教材以外のディレクトリと .claude/ のルールは除く）
+# 変換する Markdown を列挙する
+# トピックのディレクトリの中だけを対象にし、教材以外のディレクトリ、.claude/ のルール、DRAFT*.md の下書きは除く
 find_sources() {
   find "$root" -mindepth 2 -name '*.md' \
+    -not -name 'DRAFT*.md' \
     -not -path "$root/.git/*" \
     -not -path "$root/node_modules/*" \
     -not -path "$root/build/*" \
     -not -path '*/.claude/*' \
     -not -path "$dist/*" \
     | sort
+}
+
+# ビルドできるトピック（変換する Markdown を持つ直下のディレクトリ）を列挙する
+list_topics() {
+  find_sources | sed "s|^$root/||; s|/.*||" | sort -u
+}
+
+# 指定したトピックの Markdown を列挙する
+find_sources_in() {
+  find_sources | grep -F "$root/$1/"
 }
 
 # README.md は、ブラウザで開いたときの入口になるよう index.html にする
@@ -32,11 +48,6 @@ output_path() {
     rel="$(dirname "$rel")/index.md"
   fi
   echo "$dist/${rel%.md}.html"
-}
-
-# 教材のパスから、トピック名を取り出す（例: servlet/01/a.md なら servlet）
-topic_of() {
-  echo "${1%%/*}"
 }
 
 # 出力先からトピックのディレクトリへ戻る相対パス（例: servlet/01/a.md なら ../）
@@ -83,22 +94,47 @@ render_html() {
     --output "$html"
 }
 
-rm -rf "$dist"
+# ビルドするトピックを決める。指定に誤りがあれば、dist/ に触れる前に止める
+mapfile -t available < <(list_topics)
+if (($# == 0)); then
+  topics=("${available[@]}")
+else
+  topics=()
+  for arg in "$@"; do
+    topic="${arg%/}"
+    if ! printf '%s\n' "${available[@]}" | grep -qxF -- "$topic"; then
+      echo "ビルドできるトピックではありません: $arg（ビルドできるもの: ${available[*]}）" >&2
+      exit 1
+    fi
+    topics+=("$topic")
+  done
+fi
+
+# 引数なしでは dist/ 全体を、指定したときはそのトピックの出力だけを作り直す
+if (($# == 0)); then
+  rm -rf "$dist"
+else
+  for topic in "${topics[@]}"; do
+    rm -rf "${dist:?}/$topic"
+  done
+fi
 
 count=0
-while IFS= read -r src; do
-  rel="${src#"$root"/}"
-  html="$(output_path "$rel")"
-  md="${html%.html}.md"   # SVG を HTML と同じディレクトリに出力するため、中間ファイルも同じ場所に置く
+for topic in "${topics[@]}"; do
+  while IFS= read -r src; do
+    rel="${src#"$root"/}"
+    html="$(output_path "$rel")"
+    md="${html%.html}.md"   # SVG を HTML と同じディレクトリに出力するため、中間ファイルも同じ場所に置く
 
-  mkdir -p "$(dirname "$html")"
-  copy_assets "$(topic_of "$rel")"
-  render_mermaid "$src" "$md"
-  render_html "$md" "$html" "$rel"
-  rm "$md"
+    mkdir -p "$(dirname "$html")"
+    copy_assets "$topic"
+    render_mermaid "$src" "$md"
+    render_html "$md" "$html" "$rel"
+    rm "$md"
 
-  echo "${html#"$root"/}"
-  count=$((count + 1))
-done < <(find_sources)
+    echo "${html#"$root"/}"
+    count=$((count + 1))
+  done < <(find_sources_in "$topic")
+done
 
 echo "$count ファイルを変換しました"
