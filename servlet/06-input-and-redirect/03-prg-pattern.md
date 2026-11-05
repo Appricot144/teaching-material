@@ -1,54 +1,62 @@
 # POST の二重送信をどう防ぐのか
 
-> 疑問: POST の結果を表示したページを再読み込みすると、同じ処理が繰り返されないか。
+> 疑問: フォームで果物を追加したあと、ページを再読み込みしたら、同じ果物がもう一度追加されないか。
 >
-> 答え: POST の結果をそのまま表示すると、再読み込みで再送信されることがあります。更新後にリダイレクトして GET で表示する PRG（Post/Redirect/Get）パターンで防ぎます。
+> 答え: `POST` の返事として HTML を返すと、追加されることがあります。`POST` の返事ではリダイレクトして、`GET` で開き直したページを表示すれば防げます。
 
-## 問題
+## 再読み込みは、最後のリクエストを送り直す
 
-通常のフォーム送信では、ブラウザはレスポンスの HTML でページ全体を描画し直します。そのレスポンスを `forward()` で返すと、再読み込みが同じ POST の再送信になります（通常はブラウザが確認を出します）。リストへの追加なら、同じ項目が二重に追加されるかもしれません。
+ブラウザの再読み込みは、今のページを表示したときのリクエストを、もう一度送ります。
+
+`POST` の返事として HTML を返すと、今のページは `POST` の結果になります。この状態で再読み込みすると、同じ `POST` がもう一度送られます。たいていのブラウザは「もう一度送信しますか」と確認しますが、そのまま進むと同じ果物がもう一度追加されます。
 
 ```mermaid
 sequenceDiagram
     participant B as ブラウザ
     participant S as Servlet class
-    B->>S: POST /fruits
+    B->>S: POST /fruits（りんごを追加）
     S-->>B: HTML
     Note over B: 再読み込み
-    B->>S: POST /fruits（再送信）
-    Note over S: 同じ項目がもう一度追加される
+    B->>S: POST /fruits（もう一度送られる）
+    Note over S: りんごがもう一度追加される
 ```
 
-## PRG パターン
+## 追加したあとはリダイレクトする
+
+`POST` の返事では HTML を返さず、リダイレクトします。ブラウザは `GET` で開き直すので、今のページは `GET` の結果になります。
 
 ```mermaid
 sequenceDiagram
     participant B as ブラウザ
     participant S as Servlet class
-    B->>S: POST /myapp/fruits
+    B->>S: POST /myapp/fruits（りんごを追加）
     Note over S: リストに追加する
     S-->>B: 302（Location: /myapp/fruits）
     B->>S: GET /myapp/fruits
     S-->>B: 200（HTML）
     Note over B: 再読み込み
     B->>S: GET /myapp/fruits
-    Note over S: 表示するだけで、追加されない
+    Note over S: 表示するだけ。追加はしない
     S-->>B: 200（HTML）
 ```
 
-ブラウザの現在のページは GET の結果になるので、再読み込みしても POST は再送信されません。
+再読み込みで送り直されるのは `GET` なので、表示されるだけで、追加はされません。
 
-## 実装例
+この書き方を、`POST` → リダイレクト → `GET` の頭文字をとって、PRG（Post/Redirect/Get）パターンと呼びます。
+
+## 例
+
+`doGet` は表示だけ、`doPost` は追加だけを受け持ちます。
 
 Servlet class:
 
 ```java
 @WebServlet("/fruits")
 public class FruitServlet extends HttpServlet {
-    // 全リクエストで共有するので、スレッドセーフなリストを使う
+    // 全部のリクエストで共有するので、同時に使っても壊れないリストを使う
     private final List<String> fruits = new CopyOnWriteArrayList<>();
 
-    // 表示だけを担当する
+    // 表示だけを受け持つ
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -56,7 +64,7 @@ public class FruitServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/fruits.jsp").forward(req, resp);
     }
 
-    // 更新だけを担当し、HTML は返さない
+    // 追加だけを受け持ち、HTML は返さない
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("UTF-8");
@@ -71,7 +79,9 @@ public class FruitServlet extends HttpServlet {
 }
 ```
 
-`WEB-INF/fruits.jsp`（[JSTL](../05-jsp/04-return-html-with-jsp.md) が必要です）:
+`fruits` は、全部のリクエストで共有するフィールドです。[同時に使うと値が混ざる問題](../03-servlet-invocation/04-instance-and-threads.md) を防ぐため、`ArrayList` ではなく `CopyOnWriteArrayList` を使っています。
+
+`WEB-INF/fruits.jsp`（[JSTL](../05-jsp/04-return-html-with-jsp.md) を使います）:
 
 ```jsp
 <%@ page contentType="text/html; charset=UTF-8" %>
@@ -93,23 +103,47 @@ public class FruitServlet extends HttpServlet {
 </html>
 ```
 
-## ポイント
+`${pageContext.request.contextPath}` は、JSP の中で `req.getContextPath()` と同じ値を読む書き方です。
 
-- `setAttribute()` の値は引き継がれない: リダイレクトの前後は別のリクエストです。表示に必要な値は `doGet()` で用意します。
-- 防げるのは再読み込みによる再送信: ボタンの連打など、POST 自体が複数回送られる場合は別の対策が必要です。
+## 気をつけること
 
-## この例の制限
+- 表示に使う値は、`doGet` で用意する。リダイレクトの前に `setAttribute()` で入れた値は、2回目のリクエストには届かない
+- PRG パターンで防げるのは、再読み込みによる送り直しだけ。送信ボタンを何度も押されたときは、別の対策がいる
 
-リストは Servlet class のインスタンス変数に持っているので、次の制限があります。
+## この例の限界
 
-- 全ユーザで同じリストを共有します。
-- Tomcat の再起動やアプリの再デプロイで消えます。
+この例では、リストを Servlet class のフィールドに入れています。そのため、次の限界があります。
 
-実際のアプリでは、DB などに保存するのが一般的です。
+- 全員が同じ1つのリストを使う
+- Tomcat を止めると、リストは消える
 
-## 補足: ページ遷移を避ける場合
+本物のアプリでは、データベースなどに保存します。
 
-JavaScript の `fetch()` で POST を送ると、ページ全体を描画し直さず、変わった部分だけを画面に反映できます。Tomcat と Servlet class から見ると、どちらも同じ HTTP リクエストです。違いは、レスポンスを受け取ったブラウザ側の扱いです。
+---
+
+## 参考文献
+
+この章では、わかりやすさを優先して説明を単純にしています。正確な仕組みや、さらに詳しい内容は次の資料で学べます。
+
+フォームとリダイレクト:
+
+- [フォームデータの送信（MDN）](https://developer.mozilla.org/ja/docs/Learn_web_development/Extensions/Forms/Sending_and_retrieving_form_data)
+- [`<form>` 要素（MDN）](https://developer.mozilla.org/ja/docs/Web/HTML/Reference/Elements/form)
+- [HTTP のリダイレクト（MDN）](https://developer.mozilla.org/ja/docs/Web/HTTP/Guides/Redirections)
+- [Post/Redirect/Get（Wikipedia 英語版）](https://en.wikipedia.org/wiki/Post/Redirect/Get)
+
+Servlet 仕様の該当する章:
+
+- [Jakarta Servlet 6.1 仕様: HTTP Protocol Parameters（`getParameter()` で読める値）](https://jakarta.ee/specifications/servlet/6.1/jakarta-servlet-spec-6.1.html#http-protocol-parameters)
+- [Jakarta Servlet 6.1 仕様: Convenience Methods（`sendRedirect()` など）](https://jakarta.ee/specifications/servlet/6.1/jakarta-servlet-spec-6.1.html#convenience-methods)
+
+リダイレクトのステータスコードの正式な決まり:
+
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110)
+
+次のステップ:
+
+- [Jakarta EE Tutorial](https://jakarta.ee/learn/docs/jakartaee-tutorial/current/index.html)。Servlet 以外の Jakarta EE の技術も、順に学べる
 
 ---
 
