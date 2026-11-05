@@ -1,12 +1,23 @@
 # リクエストとレスポンスをどう扱うのか
 
-> 疑問: Servlet class でリクエストをどう受け取り、レスポンスをどう作るのか。
+> 疑問: `doGet` の引数の `req` と `resp` は、何に使うのか。
 >
-> 答え: Tomcat が作った `HttpServletRequest` と `HttpServletResponse` が引数で渡されます。前者から値を読み、後者に結果を書き込みます。
+> 答え: `req` は届いたリクエストで、ここから値を読みます。`resp` はこれから返すレスポンスで、ここに中身を書き込みます。
 
-## 例
+## 入力は `req`、出力は `resp`
 
-`GET /hello?name=太郎` に挨拶を返します。
+いつものプログラムは、キーボードから入力を読み、画面に出力します。
+
+Servlet class では、読む先と書く先が変わります。
+
+- 入力: `req`（`HttpServletRequest`）から読む
+- 出力: `resp`（`HttpServletResponse`）に書く
+
+どちらも、Tomcat がリクエストのたびに作って、`doGet` に渡してくれます。
+
+## 例: 名前を受け取って挨拶する
+
+`/hello?name=太郎` を開くと「こんにちは、太郎」と返す Servlet class です。
 
 ```java
 @WebServlet("/hello")
@@ -15,56 +26,54 @@ public class HelloServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = req.getParameter("name");
 
-        resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("text/plain; charset=UTF-8");
         resp.getWriter().println("こんにちは、" + name);
     }
 }
 ```
 
-メソッドの戻り値は `void` です。結果は `return` で返さず、`resp` に書き込みます。
+`doGet` の戻り値は `void` です。結果は `return` で返さず、`resp` に書き込みます。書き込んだ中身は、`doGet` が終わったあとに Tomcat がブラウザへ送ります。
 
 ```mermaid
 flowchart LR
-    T1["Tomcat<br/>req と resp を作る"] --> S["doGet()<br/>req を読み、resp に書く"] --> T2["Tomcat<br/>HTTP レスポンスとして送信する"]
+    T1["Tomcat<br/>req と resp を作る"] --> S["doGet()<br/>req を読み、resp に書く"] --> T2["Tomcat<br/>resp の中身をブラウザに送る"]
 ```
 
-## リクエストの読み取り
+## `req` から読めるもの
 
-| 取りたいもの | 書き方 |
-|---|---|
-| パラメータ | `req.getParameter("name")` |
-| HTTP メソッド | `req.getMethod()` |
-| ヘッダー | `req.getHeader("User-Agent")` |
+よく使うのは、次のメソッドです。
 
-指定したパラメータがリクエストにない場合、`getParameter()` は `null` を返します。
+- `req.getParameter("name")`: クエリの `name` の値。`?name=太郎` なら `太郎`
+- `req.getMethod()`: HTTP メソッド。`GET` など
+- `req.getHeader("User-Agent")`: ヘッダーの値
 
-## レスポンスの書き込み
+`getParameter` は、その名前の値がリクエストにないとき `null` を返します。`/hello` だけを開くと、`name` は `null` になります。
 
-| 設定するもの | 書き方 |
-|---|---|
-| ステータスコード | `resp.setStatus(...)`（省略すると 200） |
-| 形式と文字コード | `resp.setContentType(...)` |
-| ヘッダー | `resp.setHeader(名前, 値)` |
-| 本文 | `resp.getWriter().println(...)` |
+## `resp` に書けるもの
 
-## 順番の注意
+レスポンスの部品ごとに、書くためのメソッドがあります。
 
-ステータスと `Content-Type` は、本文より先に設定します。
+- `resp.setStatus(404)`: ステータスコード。書かなければ `200`
+- `resp.setContentType("text/plain; charset=UTF-8")`: ボディの種類と文字コード
+- `resp.setHeader("名前", "値")`: その他のヘッダー
+- `resp.getWriter().println("...")`: ボディ
 
-- `getWriter()` を呼んだ後に文字コードを変更しても反映されません。
-- 本文の送信が始まると、ステータスやヘッダーは変更できません。
+## 書く順番
 
-## `println()` の書き込み先
+ステータスコードとヘッダーは、ボディより先に書きます。
 
-`println()` の書き込み先は、どのオブジェクトの `println()` かで決まります。
+HTTP のレスポンスでは、ステータス行とヘッダーが、ボディより前に並んでいました。ボディを送り始めたあとでは、前の部分を書き直せません。特に `setContentType` の文字コードは、`getWriter()` より前に書かないと効きません。
 
-| コード | オブジェクトの型 | 書き込み先 |
-|---|---|---|
-| `System.out.println("a")` | `PrintStream` | 標準出力 |
-| `resp.getWriter().println("a")` | `PrintWriter` | レスポンスボディ |
+送るタイミングは [レスポンスはいつ送信されるのか](03-response-commit.md) で詳しく説明します。
 
-`System.out.println()` で出力した内容はブラウザには届かず、Tomcat を動かしているプロセスの標準出力に出ます。`bin/startup.sh` で起動した場合は、通常 `logs/catalina.out` に記録されます。
+## `System.out.println` はブラウザに届かない
+
+`println` は、どのオブジェクトの `println` を呼ぶかで、書き込む先が変わります。
+
+- `resp.getWriter().println("a")`: レスポンスのボディに書く。ブラウザに届く
+- `System.out.println("a")`: Tomcat を動かしている画面やログに書く。ブラウザには届かない
+
+`System.out.println` で書いた内容は、Tomcat の `logs/catalina.out` などで見られます。動きを確かめるための記録に使えます。
 
 ---
 
