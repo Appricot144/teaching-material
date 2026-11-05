@@ -1,23 +1,26 @@
 # Tomcat とは何か
 
-> 疑問: Tomcat とは何か。
+> 疑問: Servlet class には `main` メソッドがない。では、どうやって動かすのか。
 >
-> 答え: Servlet 仕様を実装した実行環境（サーブレットコンテナ）です。HTTP の処理を行い、Servlet class を呼び出します。
+> 答え: Tomcat というプログラムを起動し、その上に Servlet class を載せます。Tomcat がリクエストを受け取り、Servlet class を呼び出します。
 
-## Tomcat が担当すること
+## Tomcat が受け持つこと
 
-| 担当 | 内容 |
-|---|---|
-| 通信 | 接続を受け付け、HTTP を解析し、レスポンスを送信する |
-| 振り分け | URL に対応する Servlet class を呼び出す |
-| ライフサイクル管理 | Servlet class の生成、初期化、破棄を行う |
-| スレッド管理 | スレッドプールでリクエストを並行処理する |
+Tomcat は、Web サーバのうち、どのアプリでも同じ部分を受け持つプログラムです。
 
-Servlet class には `main` メソッドがなく、単体では動きません。Tomcat の上に載せて動かします。
+- リクエストを待ち、HTTP の決まりに沿って読み取る
+- パスを見て、どの Servlet class を呼ぶかを選ぶ
+- Servlet class のオブジェクトを作り、メソッドを呼ぶ
+- たくさんのリクエストに、同時に返事をする
+- Servlet class が書いたレスポンスを、ブラウザに送る
 
-## 依存関係に入れるだけでは動かない
+このように Servlet class を載せて動かすプログラムを、サーブレットコンテナと呼びます。
 
-通常のライブラリと Tomcat では、呼び出しの向きが逆です。
+## ライブラリとの違い
+
+Java では、他の人が作ったコードをライブラリとして使うことがあります。ライブラリは、自分のプログラムの中から呼び出します。
+
+Tomcat はその逆で、Tomcat が自分の Servlet class を呼び出します。
 
 ```mermaid
 flowchart LR
@@ -29,23 +32,39 @@ flowchart LR
     end
 ```
 
-そのため、Tomcat を別途インストールして起動し、その上にアプリを配置します。
+そのため、Tomcat はライブラリのように自分のプロジェクトに入れるだけでは動きません。Tomcat を別に用意して起動し、その上に自分のアプリを載せます。
 
-## アプリの配置
+## アプリを載せる
 
-アプリは WAR ファイルにまとめて、Tomcat の `webapps/` に置きます。
+自分のアプリは、WAR ファイルという1つのファイルにまとめます。WAR ファイルの中には、Servlet class などが入っています。
+
+この WAR ファイルを、Tomcat の `webapps/` フォルダに置きます。
 
 ```text
 Tomcat
 └─ webapps/
-   └─ myapp.war    ← Servlet class や JSP が入っている
+   └─ myapp.war    ← 自分の Servlet class が入っている
 ```
 
-WAR のファイル名は URL の先頭に使われます。`myapp.war` の中の `/hello` は `/myapp/hello` でアクセスします。この `/myapp` をコンテキストパスと呼びます。
+## WAR ファイルの名前と URL
 
-## 他の実装
+WAR ファイルの名前は、URL のパスの最初の部分になります。
 
-Servlet 仕様に沿ったコンテナは、Tomcat の他に Jetty や Undertow などがあります。Servlet class は仕様に沿っているので、基本的には他のコンテナでも動きます。
+`myapp.war` の中に `/hello` を受け持つ Servlet class があるとき、URL は次のようになります。
+
+```text
+http://localhost:8080/myapp/hello
+                     └─┬──┘└─┬─┘
+              WAR ファイルの名前  Servlet class が受け持つパス
+```
+
+この `/myapp` の部分を、コンテキストパスと呼びます。1つの Tomcat に複数のアプリを載せても、コンテキストパスで区別できます。
+
+URL の `localhost` は「自分のコンピュータ」を表すホスト名です。自分のコンピュータで Tomcat を動かすときに使います。`8080` は、Tomcat がはじめから使うポートです。
+
+## Tomcat の仲間
+
+サーブレットコンテナは Tomcat だけではありません。Jetty などもあります。どれも同じ Servlet 仕様に沿っているので、Servlet class は基本的にどれの上でも動きます。
 
 ---
 

@@ -1,18 +1,12 @@
 # Servlet とは何か
 
-> 疑問: Servlet とは何か。
+> 疑問: 自分で書く「ページを作る部分」は、どんなコードになるのか。
 >
-> 答え: Java で HTTP リクエストを処理してレスポンスを返すための仕組みです。この言葉は、仕様、API、自分で書くクラスのどれを指す場合もあります。
-
-## 「Servlet」が指す3つのもの
-
-| 呼び方 | 指すもの | 例 |
-|---|---|---|
-| Servlet 仕様 | コンテナとアプリの間の取り決め | Jakarta Servlet 6.1 |
-| Servlet API | 仕様を Java の型として定義したもの | `HttpServlet`、`HttpServletRequest` |
-| Servlet class | Servlet API に沿って自分で書くクラス | `HelloServlet` |
+> 答え: Servlet という決まりに沿った Java のクラスです。リクエストを受け取り、レスポンスを書くメソッドだけを書きます。
 
 ## Servlet class の例
+
+次のクラスは、`/hello` を開いたブラウザに「こんにちは」と返します。
 
 ```java
 @WebServlet("/hello")
@@ -25,27 +19,45 @@ public class HelloServlet extends HttpServlet {
 }
 ```
 
-`/hello` への GET リクエストに対して、`こんにちは` を返します。ソケットや HTTP の形式を扱うコードはありません。
+コードの各部分は、次のことを表します。
 
-## Servlet はフレームワークなのか
+- `@WebServlet("/hello")`: このクラスが、パス `/hello` のリクエストを受け持つ
+- `extends HttpServlet`: Servlet の決まりに沿ったクラスにする
+- `doGet`: `GET` のリクエストが来たときに呼ばれるメソッド
+- `req`: 届いたリクエスト
+- `resp`: これから返すレスポンス。ここに中身を書き込む
 
-呼び出しの主導権がアプリ側にないという点は、フレームワークに似ています。
+前のファイルの `RawServer` と比べてください。リクエストを待つ処理も、HTTP の文字を組み立てる処理もありません。それらは Tomcat が受け持つからです。
+
+## 「Servlet」という言葉が指すもの
+
+「Servlet」という言葉は、場面によって次の3つのどれかを指します。
+
+- Servlet 仕様: Tomcat と自分のクラスの間の取り決めを、文章で書いたもの
+- Servlet API: その取り決めを、Java のクラスやインタフェースとして用意したもの。`HttpServlet` や `HttpServletRequest` など
+- Servlet class: Servlet API を使って、自分で書くクラス。上の `HelloServlet` など
+
+この教材では、3つを区別するために、上の呼び名を使い分けます。
+
+## 呼び出すのは Tomcat
+
+いつものプログラムでは、自分の `main` メソッドから、他のクラスのメソッドを呼び出します。
+
+Servlet class には `main` メソッドがありません。`doGet` を呼び出すのは Tomcat です。自分は、呼ばれたときに何をするかだけを書きます。
 
 ```mermaid
 flowchart LR
-    subgraph L["ライブラリの場合"]
-        A1["自分のコード"] -- 呼び出す --> B1["ライブラリ"]
+    subgraph L["いつものプログラム"]
+        A1["自分の main"] -- 呼び出す --> B1["他のクラス"]
     end
-    subgraph F["Servlet の場合"]
-        A2["Tomcat"] -- 呼び出す --> B2["Servlet class"]
+    subgraph F["Servlet"]
+        A2["Tomcat"] -- 呼び出す --> B2["自分の Servlet class"]
     end
 ```
 
-ただし、Servlet API が提供するのは、HTTP を扱うための基本機能（リクエストとレスポンス、セッション、フィルターなど）が中心です。JSON の変換や DB へのアクセスなどは含まれません。
+## Servlet API をプロジェクトに入れる
 
-## `jakarta.servlet-api` は実装ではない
-
-Servlet class をコンパイルするには、`jakarta.servlet-api` を依存関係に追加します。
+Servlet class をコンパイルするには、`HttpServlet` などの Servlet API が必要です。Maven を使う場合は、次のように依存関係に追加します。
 
 ```xml
 <dependency>
@@ -56,16 +68,13 @@ Servlet class をコンパイルするには、`jakarta.servlet-api` を依存�
 </dependency>
 ```
 
-このライブラリが提供するのは主に型の定義です。`HttpServletRequest` などの実体は Tomcat が提供するので、実行時には Tomcat のものが使われます。`provided` は「コンパイル時に使うが、実行環境が提供するので WAR に含めない」という指定です。
+`provided` は「コンパイルのときだけ使う」という指定です。動かすときには、Tomcat が持っている Servlet API が使われるので、自分のアプリに入れる必要はありません。
 
-## パッケージ名の注意
+## 古い資料を読むときの注意
 
-| Tomcat のバージョン | パッケージ名 |
-|---|---|
-| 9 まで | `javax.servlet` |
-| 10 以降 | `jakarta.servlet` |
+古い資料では、Servlet API のパッケージ名が `javax.servlet` になっています。Tomcat 10 から `jakarta.servlet` に変わりました。
 
-古い資料のコードを Tomcat 10 以降で動かすには、基本的にパッケージ名の移行が必要です。
+この教材は Tomcat 11 を使うので、`jakarta.servlet` を使います。古い資料のコードを動かすときは、パッケージ名を書き換える必要があります。
 
 ---
 
