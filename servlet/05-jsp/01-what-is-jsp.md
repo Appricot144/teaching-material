@@ -1,12 +1,22 @@
 # JSP とは何か
 
-> 疑問: JSP とは何か。
+> 疑問: Java の文字列の中に HTML を書くのは読みにくい。HTML の見た目のまま、変わる部分だけを書けないのか。
 >
-> 答え: HTML の中に動的な値を埋め込めるテンプレートです。Tomcat が Servlet class に変換して実行します。
+> 答え: JSP を使えば書けます。JSP は、HTML の中に値を入れる場所を書き込めるファイルです。
 
-## 例
+## Servlet class で HTML を書くと
 
-JSP の中身はほぼ HTML です。`${name}` の部分に値が入ります。
+4章では、HTML を Java の文字列としてボディに書きました。
+
+```java
+resp.getWriter().println("<h1>こんにちは、" + name + "</h1>");
+```
+
+ページが大きくなると、どこまでが HTML で、どこからが Java なのかがわかりにくくなります。
+
+## JSP で書くと
+
+JSP では、ファイルの中身はほとんど HTML のままです。値を入れたい場所に `${name}` と書きます。
 
 ```jsp
 <%@ page contentType="text/html; charset=UTF-8" %>
@@ -18,41 +28,45 @@ JSP の中身はほぼ HTML です。`${name}` の部分に値が入ります。
 </html>
 ```
 
-JSP は Servlet とは別の仕様ですが、Tomcat で動かせます。
+それぞれの部分は、次のことを表します。
 
-## 処理と表示の分担
+- `<%@ page contentType="..." %>`: Servlet class の `setContentType` と同じ指定
+- `${name}`: `name` という名前の値を、ここに入れる
 
-JSP を使うと、処理と表示を分けられます。
+ファイルの名前は `hello.jsp` のように、`.jsp` で終わらせます。JSP は、Tomcat がそのまま動かしてくれます。
+
+## 処理と表示を分ける
+
+JSP を使うときは、仕事を次のように分けます。
+
+- Servlet class: リクエストを読み、表示する値を用意する
+- JSP: 用意された値を使って、HTML を作る
 
 ```mermaid
 flowchart LR
-    A["Servlet class<br/>リクエストの処理、値の準備"] --> B["JSP<br/>値を使った HTML の表示"]
+    A["Servlet class<br/>値を用意する"] --> B["JSP<br/>値を入れて HTML を作る"]
 ```
 
-## どの方法を使うか
+Servlet class から JSP へ値を渡す方法は、[Servlet class から JSP へどう処理と値を渡すのか](03-forward-and-attributes.md) で説明します。
 
-| ページの内容 | 使うもの |
-|---|---|
-| 毎回同じ（静的） | `.html` ファイル |
-| 表示だけで済む動的な内容 | JSP に直接アクセス |
-| 入力チェック、DB からの取得など、表示の前に処理が必要 | Servlet class から JSP へ `forward()` |
+## JSP をブラウザから直接開く
 
-JSP に直接アクセスするには、JSP を `WEB-INF/` の外に置きます。
+JSP は、Servlet class を通さずに、ブラウザから直接開くこともできます。
 
 ```text
 myapp.war
-├─ hello.jsp          /myapp/hello.jsp でアクセスできる
+├─ hello.jsp          /myapp/hello.jsp で開ける
 └─ WEB-INF/
-   └─ secret.jsp      直接アクセスできない
+   └─ secret.jsp      ブラウザからは開けない
 ```
 
-リクエストパラメータは `${param.name}` で読めます。
+`WEB-INF/` の中に置いたファイルは、ブラウザから直接は開けません。Servlet class を通してだけ使いたい JSP は、ここに置きます。
 
-処理も JSP の中に Java コード（スクリプトレット）として書けますが、処理と表示が混ざって保守しにくくなるので、避けるのが一般的です。
+直接開いた JSP では、クエリの値を `${param.name}` で読めます。`/myapp/hello.jsp?name=太郎` なら `太郎` です。
 
-## 注意点
+## 気をつけること
 
-`${name}` や `${param.name}` は自動でエスケープされません。ユーザの入力を表示するときは、[エスケープ](../04-html-response/04-xss-and-escaping.md) が必要です。
+`${name}` や `${param.name}` は、値をエスケープしません。入力された値をそのまま表示すると、[XSS](../04-html-response/04-xss-and-escaping.md) の弱点になります。エスケープして表示する方法は、[JSP で HTML を返すにはどう書くのか](04-return-html-with-jsp.md) で説明します。
 
 ---
 

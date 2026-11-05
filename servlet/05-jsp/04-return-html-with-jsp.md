@@ -1,10 +1,12 @@
 # JSP で HTML を返すにはどう書くのか
 
-> 疑問: JSP で動的な HTML を作るにはどう書くのか。
+> 疑問: リストの中身を全部表示したいとき、JSP で繰り返しをどう書くのか。
 >
-> 答え: Servlet class で値を用意し、JSP では JSTL のタグで繰り返しや出力を書きます。
+> 答え: JSTL というタグを使います。`<c:forEach>` で繰り返し、`<c:out>` でエスケープして表示します。
 
-## 例: リストの表示
+## 例: 果物のリストを表示する
+
+Servlet class で果物のリストを用意し、JSP で `<ul>` のリストにします。
 
 Servlet class:
 
@@ -37,14 +39,7 @@ public class FruitServlet extends HttpServlet {
 </html>
 ```
 
-| 記述 | 意味 |
-|---|---|
-| `<%@ taglib ... %>` | JSTL のタグを `c:` という接頭辞で使えるようにする |
-| `items="${fruits}"` | `setAttribute()` で渡したリストを繰り返しの対象にする |
-| `var="fruit"` | 各要素を入れる変数の名前を決める |
-| `<c:out>` | 値を HTML エスケープして出力する |
-
-出力される HTML は次の通りです（実際には、タグがあった位置に空行や空白が少し残ります）。
+返す HTML は、次のようになります。
 
 ```html
 <ul>
@@ -54,9 +49,26 @@ public class FruitServlet extends HttpServlet {
 </ul>
 ```
 
-## JSTL の追加
+本当は、タグがあった場所に空行や空白が少し残ります。
 
-JSTL は Tomcat に同梱されていないので、依存関係に追加します。
+## JSP の各部分
+
+- `<%@ taglib prefix="c" uri="jakarta.tags.core" %>`: JSTL のタグを、`c:` を付けて使えるようにする
+- `<c:forEach items="${fruits}">`: `fruits` の中身を、1つずつ繰り返す
+- `var="fruit"`: 繰り返しのたびに、今の1つを `fruit` という名前で使えるようにする
+- `<c:out value="${fruit}" />`: `fruit` の値を、エスケープして表示する
+
+`<c:forEach>` は、Java の `for (String fruit : fruits)` と同じ働きをします。
+
+## `<c:out>` で表示する
+
+`${fruit}` とだけ書くと、値はエスケープされません。`<c:out>` を使うと、[XSS](../04-html-response/04-xss-and-escaping.md) を防ぐエスケープをしてから表示します。
+
+入力された値を表示するときは、必ず `<c:out>` を使います。
+
+## JSTL をプロジェクトに入れる
+
+JSTL は Tomcat に入っていません。そのため、自分のアプリに入れます。Maven では、次のように依存関係に追加します。
 
 ```xml
 <dependency>
@@ -71,11 +83,11 @@ JSTL は Tomcat に同梱されていないので、依存関係に追加しま�
 </dependency>
 ```
 
-`jakarta.servlet-api` と違って、WAR に含める必要があるので `provided` にはしません。
+`jakarta.servlet-api` とは違い、`provided` は付けません。Tomcat が持っていないので、自分のアプリに入れて一緒に載せる必要があるからです。
 
-## JSTL を使わない場合
+## 補足: Java のコードを直接書く方法
 
-スクリプトレットで Java コードを直接書けば、Tomcat と Servlet API だけで動きます。
+JSP には、`<% %>` の中に Java のコードを直接書く方法もあります。この書き方をスクリプトレットと呼びます。
 
 ```jsp
 <%@ page contentType="text/html; charset=UTF-8" import="java.util.List" %>
@@ -91,7 +103,34 @@ JSTL は Tomcat に同梱されていないので、依存関係に追加しま�
 </html>
 ```
 
-`<% %>` に Java の文を書き、`<%= %>` に出力する式を書きます。ただし、`<%= %>` もエスケープしないので、ユーザの入力を表示するときは自分でエスケープする必要があります。処理と表示も混ざりやすいので、新しく書くなら JSTL を使います。
+`<% %>` に Java の文を書き、`<%= %>` に表示する値を書きます。
+
+この方法は、新しく書くときには使いません。理由は次の2つです。
+
+- `<%= %>` はエスケープしないので、XSS を防ぐには自分でエスケープする必要がある
+- HTML と Java のコードが混ざって、読みにくくなる
+
+古いアプリを読むときに出てくるので、形だけ知っておけば十分です。
+
+---
+
+## 参考文献
+
+この章では、わかりやすさを優先して説明を単純にしています。正確な仕組みや、さらに詳しい内容は次の資料で学べます。
+
+JSP と関連する仕様:
+
+- [Jakarta Pages 4.0（JSP の仕様）](https://jakarta.ee/specifications/pages/4.0/)
+- [Jakarta Expression Language 6.0（`${name}` の書き方の仕様）](https://jakarta.ee/specifications/expression-language/6.0/)
+- [Jakarta Standard Tag Library 3.0（JSTL の仕様）](https://jakarta.ee/specifications/tags/3.0/)
+
+Servlet 仕様の該当する章:
+
+- [Jakarta Servlet 6.1 仕様: Dispatching Requests（`forward()` のしくみ）](https://jakarta.ee/specifications/servlet/6.1/jakarta-servlet-spec-6.1.html#dispatching-requests)
+
+Tomcat のドキュメント:
+
+- [Jasper 2 JSP Engine How To（Tomcat が JSP を Servlet class にするしくみ）](https://tomcat.apache.org/tomcat-11.0-doc/jasper-howto.html)
 
 ---
 

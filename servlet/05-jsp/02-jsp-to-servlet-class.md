@@ -1,21 +1,27 @@
 # JSP はどうやって Servlet class になるのか
 
-> 疑問: JSP はどのように実行されるのか。
+> 疑問: JSP は HTML に近いファイルなのに、なぜ Tomcat で動くのか。
 >
-> 答え: Tomcat が JSP を Java コードに変換し、コンパイルして、Servlet class として実行します。
+> 答え: Tomcat が JSP を Servlet class の Java コードに書き換え、コンパイルして動かすからです。
 
-## 変換の流れ
+## JSP から Servlet class を作る
 
-初回のアクセス時や JSP の更新後に、変換とコンパイルが行われます。
+Tomcat は、JSP がはじめて開かれたときに、次の3つのことをします。
+
+1. JSP を、Java のコードに書き換える
+2. そのコードをコンパイルして、クラスを作る
+3. できたクラスを、Servlet class として呼び出す
 
 ```mermaid
 flowchart TB
-    A["hello.jsp"] -- 変換 --> B["hello_jsp.java<br/>HTML を out.write() で出力するコード"]
-    B -- コンパイル --> C["hello_jsp.class"]
-    C -- 実行 --> D["HTML をレスポンスに書き込む"]
+    A["hello.jsp"] -- 書き換える --> B["hello_jsp.java"]
+    B -- コンパイルする --> C["hello_jsp.class"]
+    C -- 呼び出す --> D["HTML をレスポンスに書く"]
 ```
 
-## 変換後のコードのイメージ
+JSP を書き直したときは、Tomcat がもう一度書き換えてコンパイルします。
+
+## 書き換えたコードのイメージ
 
 次の JSP があるとします。
 
@@ -23,32 +29,31 @@ flowchart TB
 <h1>こんにちは、${name}</h1>
 ```
 
-変換後のコードは、概念的には次のようなものです（実際に生成されるコードはより複雑です）。
+Tomcat は、これをおおよそ次のようなコードに書き換えます。本物のコードはもっと複雑ですが、考え方は同じです。
 
 ```java
 out.write("<h1>こんにちは、");
-out.write(/* name の値を文字列にしたもの */);
+out.write(/* name の値 */);
 out.write("</h1>");
 ```
 
-つまり、JSP は「HTML を書き出す Servlet class」を HTML の見た目のまま書くための仕組みです。`getWriter().println()` で HTML を書く処理を、Tomcat が自動で生成してくれるようなものです。
+`out.write` は、`resp.getWriter().println` と同じように、ボディに書くメソッドです。
 
-## Servlet class との共通点
+つまり JSP は、4章で自分で書いていた「HTML をボディに書くコード」を、Tomcat が代わりに作ってくれるしくみです。
 
-JSP から作られたクラスも、Servlet class と同じようにコンテナから呼び出されます。そのため、次の点は同じです。
+## Servlet class と同じところ
 
-- `request` と `response` を受け取ってレスポンスを書き込むこと
-- [1つのインスタンスを複数のスレッドが共有すること](../03-servlet-invocation/04-instance-and-threads.md)
+JSP から作られたクラスも Servlet class なので、次の点は自分で書く Servlet class と同じです。
 
-## 自分で作るクラスとの違い
+- Tomcat がオブジェクトを作り、リクエストのたびに呼び出す
+- [1つのオブジェクトを、たくさんのスレッドが同時に使う](../03-servlet-invocation/04-instance-and-threads.md)
 
-| | 自分で書く Servlet class | JSP から作られるクラス |
-|---|---|---|
-| 作る人 | 開発者 | Tomcat |
-| URL の対応付け | `@WebServlet` など | Tomcat の標準設定で `*.jsp` に対応 |
-| インスタンスの生成 | Tomcat | Tomcat |
+## 自分で書く Servlet class と違うところ
 
-生成されたコードは、Tomcat の `work/` ディレクトリの下で確認できます。
+- クラスを書くのは自分ではなく、Tomcat
+- パスとの対応は `@WebServlet` で書かない。`.jsp` で終わるパスは、Tomcat がはじめから JSP に結び付けている
+
+Tomcat が作った Java のコードは、Tomcat の `work/` フォルダの中で見られます。
 
 ---
 

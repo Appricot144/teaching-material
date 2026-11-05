@@ -1,10 +1,12 @@
 # Servlet class から JSP へどう処理と値を渡すのか
 
-> 疑問: Servlet class から JSP へ、処理と値をどう渡すのか。
+> 疑問: Servlet class で用意した値を、JSP でどうやって使うのか。
 >
-> 答え: 値は `req.setAttribute()` で `request` に入れ、処理は `forward()` で渡します。
+> 答え: 値を `req.setAttribute()` で `req` に入れ、`forward()` で JSP に処理を引き継ぎます。JSP は、引き継いだ `req` から値を読みます。
 
 ## 例
+
+`HelloServlet` が名前を用意し、`hello.jsp` が HTML を作ります。
 
 ```java
 @WebServlet("/hello")
@@ -30,50 +32,53 @@ public class HelloServlet extends HttpServlet {
 </html>
 ```
 
-## 処理の流れ
+`forward()` は `ServletException` を投げることがあるので、`throws` に足しています。
+
+## 値を `req` に入れる
+
+`req.setAttribute("name", "太郎")` は、`req` に「`name` という名前で `太郎`」という値を入れます。JSP の `${name}` は、この値を読みます。
+
+`req` に値を入れるのは、`req` がリクエストごとに別のオブジェクトだからです。たくさんの人が同時に開いても、値が他の人のものと混ざりません。
+
+## 処理を JSP に引き継ぐ
+
+`forward()` は、処理を JSP に引き継ぐメソッドです。引き継ぐときに、`req` と `resp` をそのまま渡します。
+
+- JSP は、受け取った `req` から値を読む
+- JSP は、受け取った `resp` に HTML を書く
 
 ```mermaid
 sequenceDiagram
     participant B as ブラウザ
     participant S as HelloServlet
-    participant J as hello.jsp の Servlet class
+    participant J as hello.jsp
     B->>S: GET /hello
     S->>S: setAttribute() で値を入れる
     S->>J: forward(req, resp)
-    J->>J: req の値を読み、resp に HTML を書く
-    J-->>S: 処理の終了（レスポンスはコミット済み）
-    S-->>B: HTML（実際の送信は Tomcat が行う）
+    J->>J: req から値を読み、resp に HTML を書く
+    J-->>S: 終わる
+    S-->>B: HTML（送るのは Tomcat）
 ```
 
-`forward()` はサーバ内の処理なので、ブラウザから見ると1回のリクエストです。ブラウザの URL は `/hello` のままです。
+引き継ぎは Tomcat の中だけで起きます。ブラウザから見ると、リクエストは1回だけです。アドレス欄の URL も `/hello` のままです。
 
-## `forward()` の引数
+## 引数で渡さない理由
 
-`forward()` の引数は `req` と `resp` の2つに固定されています。
+`forward()` の引数は、`req` と `resp` の2つと決まっています。他の値を引数として足すことはできません。
 
-```java
-void forward(ServletRequest request, ServletResponse response)
-```
+そのため、渡したい値は `req` に入れて、`req` ごと渡します。
 
-| 引数 | 転送先での使われ方 |
-|---|---|
-| `req` | パラメータや `setAttribute()` で入れた値を読む |
-| `resp` | HTML を書き込む |
+## 名前のまちがいに気づきにくい
 
-独自の引数は追加できないので、渡したい値は `req` に入れます。JSP から作られるクラスは Tomcat が生成して管理するので、自分のコードから直接 `new` して呼び出すこともしません。
+`setAttribute` で入れる値の名前は、ただの文字列です。`setAttribute("name", ...)` と書いたのに、JSP で `${nmae}` とまちがえても、エラーになりません。何も表示されないだけです。
 
-## `setAttribute()` の特徴
+値が表示されないときは、まず名前のつづりを確かめてください。
 
-`request` はリクエストごとに別のオブジェクトなので、同時に複数のリクエストを処理していても、他のユーザの値と混ざりません。値はそのリクエストの処理の間だけ使えます。
+## 気をつけること
 
-一方、引数と違って名前や型がコンパイル時にチェックされません。`setAttribute("name", ...)` と書いたのに JSP で `${nmae}` と書いても、エラーにならず空文字が表示されます。
-
-## 注意点
-
-- パスの基準: `/` で始まるパスはアプリのルートからの位置です。コンテキストパスは含めません。
-- `forward()` の前に本文を書かない: バッファに書いた本文は `forward()` の時点で破棄されます。すでに送信が始まっていれば `IllegalStateException` になります。ステータスやヘッダーは引き継がれます。
-- `forward()` の後にレスポンスを書かない: 転送先の処理が終わり、`forward()` が戻る前にレスポンスはコミットされて閉じられます。
-- 例外の宣言: `forward()` は `ServletException` を投げる可能性があるので、`throws` に追加します。
+- `getRequestDispatcher` のパスは、アプリの中の場所で書く。`/myapp` のようなコンテキストパスは書かない
+- `forward()` の前に、ボディを書かない。書いた中身は捨てられる。送り始めていたら、エラーになる
+- `forward()` のあとに、ボディを書かない。JSP が書き終わった時点で、レスポンスは送られている
 
 ---
 
