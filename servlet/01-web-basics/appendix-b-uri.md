@@ -1,37 +1,37 @@
 # 補遺: URI とは何か
 
-> 疑問: URI とは何か。URL とどう違うのか。
+> 疑問: URL と似た「URI」という言葉を見かけた。URL とは何が違うのか。
 >
-> 答え: URI はリソースを識別する文字列の総称です。URL は URI のうち、リソースの場所によって識別するものです。
+> 答え: URI は、何かを指し示す文字列をまとめた呼び名です。URL は、その中でも場所を使って指し示すものです。
 
-## URI と URL の関係
+## 場所で指すか、名前で指すか
+
+ある本を指し示すには、2つの方法があります。
+
+- 場所で指す: 「〇〇図書館の3階の、この棚にある本」
+- 名前で指す: 「ISBN が 978-4-00-000000-0 の本」
+
+Web のページを場所で指す文字列が URL です。名前で指す文字列は URN と呼びます。URI は、URL と URN の両方をまとめた呼び名です。
 
 ```mermaid
 flowchart TB
-    URI["URI<br/>リソースを識別する"]
-    URI --> URL["URL<br/>場所で識別する"]
-    URI --> URN["URN<br/>名前で識別する"]
+    URI["URI<br/>何かを指し示す"]
+    URI --> URL["URL<br/>場所で指す"]
+    URI --> URN["URN<br/>名前で指す"]
 ```
 
-| 種類 | 例 | 識別の方法 |
-|---|---|---|
-| URL | `https://example.com/index.html` | どこにあるか |
-| URN | `urn:isbn:9784000000000` | 何という名前か |
+名前で指す URN だけでは、どこにあるかはわかりません。そのため、ブラウザでページを開くときに使うのは URL です。
 
-URN の例は ISBN を使った形式を示すためのものです。URN は名前を示すだけなので、それだけではアクセス先がわかりません。
+## この教材での使い分け
 
-## 使い分け
+Web のページを指すときは、この教材では「URL」と呼びます。
 
-Web ページの場所を指して話すなら、「URL」で問題ありません。
+ただし、後の章で書く Servlet には、名前に URI と URL が入った次のメソッドがあります。`https://example.com/myapp/hello?name=taro` を開いたとき、それぞれ次の文字列を返します。
 
-Servlet API には次の2つのメソッドがあり、名前と戻り値の範囲が異なります。`https://example.com/myapp/hello?name=taro` にアクセスした場合の値は次の通りです。
+- `getRequestURL()`: `https://example.com/myapp/hello`
+- `getRequestURI()`: `/myapp/hello`
 
-| メソッド | 戻り値 |
-|---|---|
-| `req.getRequestURL()` | `https://example.com/myapp/hello` |
-| `req.getRequestURI()` | `/myapp/hello` |
-
-どちらもクエリは含みません。クエリは `req.getQueryString()` で取得します。
+名前の違いは、返す範囲の違いだと覚えておけば十分です。どちらも `?` から後ろのクエリは返しません。
 
 ---
 
