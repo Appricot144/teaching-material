@@ -25,8 +25,8 @@ paths:
 
 | 要素 | バージョン |
 |---|---|
-| Spring Boot | 3.x |
-| Spring Framework | 6.x |
+| Spring Boot | 4.x |
+| Spring Framework | 7.x |
 | Java | 17 以上 |
 
 ## Spring Framework と Spring Boot の使い分け
