@@ -1,10 +1,12 @@
 # URL と Servlet class をどう対応付けるのか
 
-> 疑問: Tomcat は、どの URL でどの Servlet class を呼ぶのかをどう知るのか。
+> 疑問: `/hello` のリクエストが来たとき、Tomcat はどの Servlet class を呼べばよいかを、どうやって知るのか。
 >
-> 答え: `@WebServlet` アノテーションか `web.xml` に書いた対応を、起動時に読み取ります。新しく書くなら、Servlet class のそばで対応がわかる `@WebServlet` を基本にするとよいです。
+> 答え: Servlet class に付けた `@WebServlet("/hello")` を読んで知ります。`web.xml` というファイルに書く方法もあります。
 
-## 方法1: `@WebServlet`
+## 方法1: `@WebServlet` を付ける
+
+Servlet class の上に `@WebServlet` を付け、受け持つパスを書きます。
 
 ```java
 @WebServlet("/hello")
@@ -13,15 +15,19 @@ public class HelloServlet extends HttpServlet {
 }
 ```
 
-複数の URL を対応させることもできます。
+Tomcat は、アプリを読み込むときに `@WebServlet` を探し、「`/hello` なら `HelloServlet`」という対応表を作ります。
+
+1つのクラスに、複数のパスを受け持たせることもできます。
 
 ```java
 @WebServlet({"/hello", "/hi"})
 ```
 
-## 方法2: `web.xml`
+この方法では、クラスを見ればどのパスを受け持つかがすぐにわかります。新しく書くときは、この方法を使うとよいでしょう。
 
-`WEB-INF/web.xml` に、名前を介して Servlet class と URL を対応させます。Servlet class のコードを変えずに対応を変更でき、対応を1か所で一覧できます。
+## 方法2: `web.xml` に書く
+
+アプリの中の `WEB-INF/web.xml` というファイルに、対応を書く方法もあります。
 
 ```xml
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="6.1">
@@ -37,25 +43,31 @@ public class HelloServlet extends HttpServlet {
 </web-app>
 ```
 
-## URL パターン
+`<servlet>` で Servlet class に `hello` という名前を付け、`<servlet-mapping>` でその名前とパスを結び付けます。
 
-複数のパターンが一致したときは、次の表の上から順に優先されます。
+この方法では、すべての対応を1つのファイルで見渡せます。古いアプリでは、この方法がよく使われています。
 
-| 種類 | 例 | 一致する URL |
+## パスの書き方
+
+受け持つパスには、`/hello` のようにぴったりのパスだけでなく、決まった形のパスをまとめて書くこともできます。
+
+| 書き方 | 例 | 受け持つパス |
 |---|---|---|
-| 完全一致 | `/hello` | `/hello` のみ |
-| パス一致 | `/users/*` | `/users`、`/users/1`、`/users/1/edit` など |
-| 拡張子一致 | `*.do` | `/a.do`、`/b/c.do` など |
-| デフォルト | `/` | 他のどれにも一致しなかった URL |
+| ぴったり | `/hello` | `/hello` だけ |
+| 前の部分が同じ | `/users/*` | `/users`、`/users/1`、`/users/1/edit` など |
+| 拡張子が同じ | `*.do` | `/a.do`、`/b/c.do` など |
+| どれにも当てはまらない | `/` | 他のどの書き方にも当てはまらないパス |
 
-パス一致で残りの部分を知りたいときは `req.getPathInfo()` を使います。`/users/1` なら `/1` が返ります。
+1つのパスが複数の書き方に当てはまるときは、表の上にある書き方が選ばれます。
 
-## 注意点
+`/users/*` で受けたとき、`*` の部分は `req.getPathInfo()` で取り出せます。`/users/1` なら `/1` が返ります。
 
-- パターンにコンテキストパスは含めない: `myapp.war` の場合、`@WebServlet("/hello")` の URL は `/myapp/hello` になります。
-- HTTP メソッドは指定できない: GET と POST の違いは、`doGet()` と `doPost()` を書き分けて対応します。
-- パス変数の記法はない: `/users/{id}` とは書けないので、`/users/*` で受けて `getPathInfo()` の値を解析します。
-- 同じパターンを重複させない: 別々の Servlet class に同じパターンを指定すると、アプリの起動時にエラーになります。
+## 気をつけること
+
+- パスに、コンテキストパスは書かない。`myapp.war` の `@WebServlet("/hello")` は、URL では `/myapp/hello` になる
+- `GET` か `POST` かは、ここでは分けない。分けたいときは、`doGet` と `doPost` を書き分ける
+- `/users/{id}` のような書き方はできない。`/users/*` で受けて、`getPathInfo()` の値から取り出す
+- 同じパスを、2つの Servlet class に受け持たせない。アプリを読み込むときにエラーになる
 
 ---
 

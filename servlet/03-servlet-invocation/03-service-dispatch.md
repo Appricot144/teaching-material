@@ -1,49 +1,55 @@
 # `doGet()` や `doPost()` は誰が振り分けるのか
 
-> 疑問: HTTP メソッドに応じたメソッドの呼び出しは、誰が決めているのか。
+> 疑問: `doGet` という名前のメソッドを書いただけで、なぜ `GET` のときに呼ばれるのか。
 >
-> 答え: Servlet API の `HttpServlet` が持つ `service()` です。Tomcat が直接 `doGet()` を呼ぶわけではありません。この振り分けは Servlet 仕様に定められています。
+> 答え: `HttpServlet` から受け継いだ `service()` が、HTTP メソッドを見て `doGet` か `doPost` を呼び分けているからです。
 
-## 呼び出しの流れ
+## Tomcat が呼ぶのは `service()` だけ
+
+Tomcat は、どの Servlet class に対しても、同じ `service()` というメソッドを呼びます。`doGet` を直接呼ぶわけではありません。
+
+`service()` は、自分では書いていません。`HelloServlet` は `extends HttpServlet` と書いたので、`HttpServlet` が持つ `service()` を受け継いでいます。
+
+## `service()` がすること
+
+`HttpServlet` の `service()` は、リクエストの HTTP メソッドを見て、呼ぶメソッドを選びます。
+
+- `GET` なら `doGet()` を呼ぶ
+- `POST` なら `doPost()` を呼ぶ
 
 ```mermaid
 sequenceDiagram
     participant T as Tomcat
-    participant H as HttpServlet
-    participant S as HelloServlet
-    T->>H: service(request, response)
-    H->>H: getMethod() で HTTP メソッドを確認
-    H->>S: doGet(request, response)
+    participant H as HttpServlet から受け継いだ service()
+    participant S as 自分で書いた doGet()
+    T->>H: service(req, resp)
+    H->>H: HTTP メソッドを確かめる（GET だった）
+    H->>S: doGet(req, resp)
 ```
 
-`HelloServlet` は `HttpServlet` を継承しているので、自分で `service()` を書かなくても、この振り分けを受け継ぎます。Tomcat は `service()` だけを呼べばよいので、個々の Servlet class の中身を知らなくても同じ方法で呼び出せます。
+このしくみのおかげで、自分は `doGet` や `doPost` に、それぞれのときの処理を書くだけで済みます。
 
-## 担当の分担
+## 誰が何を決めているか
 
-| 段階 | 決めること | 担当 |
-|---|---|---|
-| 1. HTTP の解析 | メソッドやパスの読み取り | Tomcat |
-| 2. 呼び出し先の選択 | どの Servlet class を使うか | Tomcat |
-| 3. `service()` の呼び出し | 選んだ Servlet class の入口を呼ぶ | Tomcat |
-| 4. メソッドの振り分け | `doGet()` と `doPost()` のどれを呼ぶか | `HttpServlet.service()` |
-| 5. アプリ処理 | 何を返すか | 自分の Servlet class |
+リクエストが届いてから処理が終わるまでに、決めることと担当は次のとおりです。
 
-## 実装しなかったメソッド
+1. HTTP を読み取る: Tomcat
+2. どの Servlet class を呼ぶかを選ぶ: Tomcat
+3. 選んだ Servlet class の `service()` を呼ぶ: Tomcat
+4. `doGet` と `doPost` のどちらを呼ぶかを選ぶ: `HttpServlet` の `service()`
+5. 何を返すかを決める: 自分で書いた `doGet` や `doPost`
 
-`doPost()` だけを実装した URL に GET でアクセスすると、`HttpServlet` が用意する `doGet()` が動き、通常は `405 Method Not Allowed` を返します。
+## 書いていないメソッドが呼ばれたとき
 
-## 仕様で決まっていること
+`doPost` だけを書いた Servlet class に、`GET` のリクエストが来たとします。
 
-| 項目 | 仕様での扱い |
-|---|---|
-| コンテナが `service()` を呼ぶこと | 定められている |
-| `HttpServlet` が HTTP メソッドごとに振り分けること | 定められている |
-| Tomcat 内部での HTTP の解析方法 | 定められていない |
-| スレッドプールなど Tomcat 内部の構成 | 定められていない |
+このとき、`HttpServlet` が用意している `doGet` が呼ばれます。このメソッドは、`405 Method Not Allowed`（その HTTP メソッドには対応していない）を返します。
 
-つまり、Tomcat と Servlet class の接点は仕様で決まっていて、Tomcat の内部の作りは自由です。
+## この振り分けは決まりの一部
 
-Tomcat も `servlet-api.jar` として `HttpServlet` のコードを同梱していますが、仕様どおりに動く必要があるので、Tomcat 独自の振り分けにはなりません。
+`service()` が HTTP メソッドで振り分けることは、Servlet 仕様で決まっています。そのため、Tomcat 以外のサーブレットコンテナでも、`doGet` は同じように呼ばれます。
+
+一方、Tomcat が HTTP をどう読み取るかなど、Tomcat の中の作りは仕様で決まっていません。仕様で決まっているのは、Tomcat と Servlet class がつながる部分だけです。
 
 ---
 
