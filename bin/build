@@ -14,12 +14,13 @@ if [[ ! -x "$mmdc" ]]; then
   exit 1
 fi
 
-# 変換する Markdown を列挙する（トピックのディレクトリの中だけを対象にし、教材以外のディレクトリは除く）
+# 変換する Markdown を列挙する（トピックのディレクトリの中だけを対象にし、教材以外のディレクトリと .claude/ のルールは除く）
 find_sources() {
   find "$root" -mindepth 2 -name '*.md' \
     -not -path "$root/.git/*" \
     -not -path "$root/node_modules/*" \
     -not -path "$root/build/*" \
+    -not -path '*/.claude/*' \
     -not -path "$dist/*" \
     | sort
 }

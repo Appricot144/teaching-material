@@ -19,6 +19,11 @@ while IFS= read -r entry; do
 done < <(find "$dist" -mindepth 1 -maxdepth 1)
 [[ -e "$dist/assets" ]] && fail "dist/assets/ が残っている"
 
+# .claude/ の中のルールは教材ではないので、HTML にしない
+while IFS= read -r entry; do
+  fail ".claude/ が出力されている: ${entry#"$dist"/}"
+done < <(find "$dist" -name .claude)
+
 while IFS= read -r topic; do
   name="$(basename "$topic")"
 
