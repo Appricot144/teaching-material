@@ -22,14 +22,16 @@ flowchart TB
 
 名前で指す URN だけでは、どこにあるかはわかりません。そのため、ブラウザでページを開くときに使うのは URL です。
 
-## この教材での使い分け
+## ふだんの使い分け
 
-Web のページを指すときは、この教材では「URL」と呼びます。
+Web のページを指すときは、ふつう「URL」と呼びます。
 
-ただし、後の章で書く Servlet には、名前に URI と URL が入った次のメソッドがあります。`https://example.com/myapp/hello?name=taro` を開いたとき、それぞれ次の文字列を返します。
+ただし、後の章で書く Servlet には、名前に URI と URL が入った次のメソッドがあります。`http://example.com/myapp/hello?name=taro` を開いたとき、それぞれ次の文字列を返します。
 
-- `getRequestURL()`: `https://example.com/myapp/hello`
+- `getRequestURL()`: `http://example.com/myapp/hello`
 - `getRequestURI()`: `/myapp/hello`
+
+`getRequestURI()` が返すのは、[URL とは何か](03-what-is-url.md) で見たパスです。
 
 名前の違いは、返す範囲の違いだと覚えておけば十分です。どちらも `?` から後ろのクエリは返しません。
 
