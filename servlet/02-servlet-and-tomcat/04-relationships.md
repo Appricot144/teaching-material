@@ -14,52 +14,57 @@ Tomcat と Servlet class も同じです。
 - あなたは、Tomcat の中身を知らない
 - それでも、両方が Servlet 仕様に従っているので、つながる
 
+プログラムでは、これを Java の継承で実現しています。
+
+Java では、変数の型を親クラスにしておくと、そのクラスを継承したどのクラスのオブジェクトでも入れられます。その変数でメソッドを呼ぶと、入っているオブジェクトがもつメソッドが動きます。動くのは`HttpServlet`から継承してオーバーライドしたメソッドです。
+
+Tomcat の中は、イメージとしては次のようになっています。
+
+```java
+// Tomcat の中（イメージ）
+HttpServlet servlet = パスに対応する Servlet class のオブジェクト;
+servlet.doGet(request, response);
+```
+
+- Tomcat のコードに出てくるのは、Servlet API の `HttpServlet` 型だけで、`HelloServlet` という名前は出てこない
+- 変数 `servlet` に実際に入っているのは、あなたの `HelloServlet` のオブジェクト
+- そのため、`doGet` を呼ぶと、あなたが上書きした `doGet` が動く
+
+Tomcat は `HttpServlet` だけを知っていればよく、あなたは `HttpServlet` を継承して `doGet` を上書きすればよい、ということです。この `HttpServlet` が、コンセントとプラグの「形」に当たります。
+
 ## 4つの関係
 
 ここまでに出てきた4つは、次のように関係しています。
 
 ```mermaid
 flowchart TB
-    Spec["Servlet 仕様<br/>取り決め"]
-    API["Servlet API<br/>取り決めを Java の型にしたもの"]
-    Tomcat["Tomcat<br/>Servlet class を動かすプログラム"]
-    Class["Servlet class<br/>自分で書くクラス"]
-    Browser["ブラウザ"]
-
-    Spec -- Java の型にする --> API
-    Tomcat -- 取り決めに従って作られている --> Spec
-    Class -- 型を使って書く --> API
-    Browser <-- HTTP --> Tomcat
-    Tomcat -- 呼び出す --> Class
-```
-
-図の矢印は、次のことを表します。
-
-- Servlet API は、Servlet 仕様を Java の型にしたもの
-- Tomcat は、Servlet 仕様に従って作られている
-- Servlet class は、Servlet API の型を使って書く
-- Tomcat は、Servlet class を呼び出す
-- ブラウザがやり取りする相手は Tomcat。ブラウザが Servlet class と直接やり取りすることはない
-
-## 書くときと動かすとき
-
-Servlet API は、書くときと動かすときで、用意する場所が変わります。
-
-- 書くとき: 自分のプロジェクトに `jakarta.servlet-api` を入れて、コンパイルに使う
-- 動かすとき: Tomcat が持っている Servlet API が使われる
-
-```mermaid
-flowchart LR
-    subgraph D["書くとき"]
-        C1["Servlet class"] -- コンパイルに使う --> A1["jakarta.servlet-api"]
-    end
-    subgraph R["動かすとき"]
+    subgraph RUN["動いているとき"]
+        direction LR
         B["ブラウザ"] <-- HTTP --> T["Tomcat"]
-        T -- 呼び出す --> C2["Servlet class"]
+        T -- "doGet を呼ぶ" --> C["Servlet class"]
     end
+    T -. "この型だけを知っている" .-> A["Servlet API<br/>HttpServlet などの型実装"]
+    C -. "この型を継承している" .-> A
+    S["Servlet 仕様<br/>取り決めを書いた文章"] -- "Java の型にする" --> A
 ```
 
-前のファイルで `provided` を指定したのは、このためです。
+実線は動いているときの呼び出しを、点線は型の関係を表します。
+
+- ブラウザがやり取りする相手は Tomcat。ブラウザが Servlet class と直接やり取りすることはない
+- Tomcat は、Servlet class の `doGet` を呼び出す
+- Tomcat が知っているのは、Servlet API の型だけ
+- Servlet class は、Servlet API の `HttpServlet` を継承して書く
+- Servlet API は、Servlet 仕様を Java の型にしたもの
+
+## 同じ Servlet API でコンパイルする
+
+Tomcat と Servlet class は、どちらも Servlet API を使ってコンパイルされています。両方が同じ Servlet 仕様に従うためです。
+
+Servlet API は、仕様を Java の型にしたものです。そのため、仕様に従っているかを、コンパイラが確かめられます。たとえば、`HttpServlet` を継承していなかったり、`doGet` の引数の型を間違えたりすると、コンパイルエラーになります。
+
+Tomcat の開発者も、あなたも、同じ型を使ってコンパイルします。だから、お互いを知らなくても、形が合います。
+
+Servlet API は、動かすときには1つあれば足ります。それは Tomcat が持っているので、自分のアプリには入れません。[Servlet とは何か](02-what-is-servlet.md) で `provided` を指定したのは、このためです。
 
 ---
 
@@ -71,6 +76,7 @@ Servlet の仕様と API:
 
 - [Jakarta Servlet 6.1（仕様）](https://jakarta.ee/specifications/servlet/6.1/)
 - [Jakarta Servlet 6.1 API ドキュメント](https://jakarta.ee/specifications/servlet/6.1/apidocs/)
+- [Jakarta EE（Wikipedia）](https://ja.wikipedia.org/wiki/Jakarta_EE)。Servlet が含まれる仕様の集まりと、名前が変わった経緯
 
 Tomcat のドキュメント:
 

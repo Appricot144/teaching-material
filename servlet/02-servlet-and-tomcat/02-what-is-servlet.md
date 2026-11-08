@@ -33,9 +33,9 @@ public class HelloServlet extends HttpServlet {
 
 「Servlet」という言葉は、場面によって次の3つのどれかを指します。
 
-- Servlet 仕様: Tomcat と自分のクラスの間の取り決めを、文章で書いたもの
-- Servlet API: その取り決めを、Java のクラスやインタフェースとして用意したもの。`HttpServlet` や `HttpServletRequest` など
-- Servlet class: Servlet API を使って、自分で書くクラス。上の `HelloServlet` など
+- **Servlet 仕様**: Tomcat と自分のクラスの間の取り決めを、文章で書いたもの
+- **Servlet API**: その取り決めを、Java のクラスやインタフェースとして用意したもの。`HttpServlet` や `HttpServletRequest` など
+- **Servlet class*: Servlet API を使って、自分で書くクラス。上の `HelloServlet` など
 
 この教材では、3つを区別するために、上の呼び名を使い分けます。
 
@@ -45,19 +45,25 @@ public class HelloServlet extends HttpServlet {
 
 Servlet class には `main` メソッドがありません。`doGet` を呼び出すのは Tomcat です。自分は、呼ばれたときに何をするかだけを書きます。
 
+前のページの図では、Tomcat がパスを見て `/hello` の Servlet class を選んでいました。選んだあとに Tomcat が呼び出すのが、この `doGet` です。
+
 ```mermaid
 flowchart LR
     subgraph L["いつものプログラム"]
         A1["自分の main"] -- 呼び出す --> B1["他のクラス"]
     end
-    subgraph F["Servlet"]
+    subgraph F["Servlet class の場合"]
         A2["Tomcat"] -- 呼び出す --> B2["自分の Servlet class"]
     end
 ```
 
-## Servlet API をプロジェクトに入れる
+## Servlet API はどこにあるのか
 
-Servlet class をコンパイルするには、`HttpServlet` などの Servlet API が必要です。Maven を使う場合は、次のように依存関係に追加します。
+Servlet class をコンパイルするには、`HttpServlet` などの Servlet API が必要です。
+
+Servlet API は、JDK（Java をインストールすると付いてくる部分）には入っていません。Jakarta EE という、サーバ向けの仕様の集まりに含まれていて、パッケージ名は `jakarta.servlet` です。そのため、Maven や Gradle などのビルドツール（ライブラリを取ってきて、コンパイルをまとめて行う道具）で、外のライブラリとして依存関係に入れます。
+
+次は、Maven を使う場合の `pom.xml` の例です。
 
 ```xml
 <dependency>
@@ -68,13 +74,19 @@ Servlet class をコンパイルするには、`HttpServlet` などの Servlet A
 </dependency>
 ```
 
-`provided` は「コンパイルのときだけ使う」という指定です。動かすときには、Tomcat が持っている Servlet API が使われるので、自分のアプリに入れる必要はありません。
+一方で、動かすときには、Tomcat が持っている Servlet API が使われます。Servlet API は Tomcat と Servlet class の間の取り決めなので、Tomcat に同梱されています。そのため、アプリを1つのファイル（war）にまとめるときに、Servlet API を入れる必要はありません。
 
-## 古い資料を読むときの注意
+上の例の `<scope>provided</scope>` は、この指定です。コンパイルのときは Servlet API を使い、war には入れません。
 
-古い資料では、Servlet API のパッケージ名が `javax.servlet` になっています。Tomcat 10 から `jakarta.servlet` に変わりました。
-
-この教材は Tomcat 11 を使うので、`jakarta.servlet` を使います。古い資料のコードを動かすときは、パッケージ名を書き換える必要があります。
+> コラム: パッケージ名が変わった理由
+>
+> 古い資料では、Servlet API のパッケージ名が `javax.servlet` になっています。今は `jakarta.servlet` です。
+>
+> Servlet は、もともと Java EE という、サーバ向けの Java の仕様の一部でした。Java EE は Oracle という会社が管理していましたが、2017年に、Eclipse 財団という団体へ引き渡されることになりました。その後の話し合いで、「Java」という名前と `javax` というパッケージ名は、引き続き Oracle のものとされました。そのため、仕様の名前は Jakarta EE に、パッケージ名は `jakarta` に変わりました。
+>
+> Tomcat は、10 から `jakarta.servlet` を使っています。この教材は Tomcat 11 を使うので、古い資料のコードを動かすときは、パッケージ名を書き換える必要があります。
+>
+> 参考: [Jakarta EE（Wikipedia）](https://ja.wikipedia.org/wiki/Jakarta_EE)
 
 ---
 

@@ -18,25 +18,16 @@ Tomcat は、Web サーバのうち、どのアプリでも同じ部分を受け
 
 ## ライブラリとの違い
 
-Java では、他の人が作ったコードをライブラリとして使うことがあります。ライブラリは、自分のプログラムの中から呼び出します。
+前のページでは、Servlet API を外のライブラリとして依存関係に入れました。Tomcat も Servlet に関係するプログラムですが、同じようにライブラリとして入れるわけではありません。
 
-Tomcat はその逆で、Tomcat が自分の Servlet class を呼び出します。
+- Servlet API: ライブラリとして入れる。自分のコードから使う
+- Tomcat: ライブラリとしては入れない。Tomcat が自分のコードを呼び出す
 
-```mermaid
-flowchart LR
-    subgraph L["ライブラリ"]
-        A1["自分のコード"] -- 呼び出す --> B1["ライブラリ"]
-    end
-    subgraph T["Tomcat"]
-        A2["Tomcat"] -- 呼び出す --> B2["自分のコード"]
-    end
-```
-
-そのため、Tomcat はライブラリのように自分のプロジェクトに入れるだけでは動きません。Tomcat を別に用意して起動し、その上に自分のアプリを載せます。
+Tomcat は、自分のコードに呼び出される側ではなく、自分のコードを呼び出す側です。そのため、自分のプロジェクトに入れるだけでは動きません。Tomcat を別に用意して起動し、その上に自分のアプリを載せます。
 
 ## アプリを載せる
 
-自分のアプリは、WAR ファイルという1つのファイルにまとめます。WAR ファイルの中には、Servlet class などが入っています。
+自分のアプリは、1つのファイルにまとめます。前のページで出てきた、アプリをまとめた1つのファイル（war）です。このファイルを WAR ファイルと呼びます。WAR ファイルの中には、Servlet class などが入っています。
 
 この WAR ファイルを、Tomcat の `webapps/` フォルダに置きます。
 
@@ -44,6 +35,24 @@ flowchart LR
 Tomcat
 └─ webapps/
    └─ myapp.war    ← 自分の Servlet class が入っている
+```
+
+Tomcat は起動すると、`webapps/` にある WAR ファイルを読み込み、中の Servlet class を載せた状態になります。1つの Tomcat には、いくつものアプリを載せられます。
+
+```mermaid
+flowchart TB
+    subgraph T["Tomcat（サーブレットコンテナ）"]
+        direction LR
+        subgraph A1["myapp.war（/myapp）"]
+            direction TB
+            S1["HelloServlet<br/>/hello"]
+            S2["NewsServlet<br/>/news"]
+        end
+        subgraph A2["shop.war（/shop）"]
+            direction TB
+            S3["CartServlet<br/>/cart"]
+        end
+    end
 ```
 
 ## WAR ファイルの名前と URL
@@ -54,13 +63,13 @@ WAR ファイルの名前は、URL のパスの最初の部分になります。
 
 ```text
 http://localhost:8080/myapp/hello
-                     └─┬──┘└─┬─┘
+                     └─┬──┘└──┬─┘
               WAR ファイルの名前  Servlet class が受け持つパス
 ```
 
 この `/myapp` の部分を、コンテキストパスと呼びます。1つの Tomcat に複数のアプリを載せても、コンテキストパスで区別できます。
 
-URL の `localhost` は「自分のコンピュータ」を表すホスト名です。自分のコンピュータで Tomcat を動かすときに使います。`8080` は、Tomcat がはじめから使うポートです。
+URL の `localhost` は「自分のコンピュータ」を表すホスト名です。自分のコンピュータで Tomcat を動かすときに使います。`8080` は、Tomcat がデフォルトで使うポート番号です。
 
 ## Tomcat の仲間
 

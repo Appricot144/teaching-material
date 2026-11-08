@@ -59,15 +59,25 @@ public class RawServer {
 - 作りたいページによって変わる部分: 自分で書く。この部分を Servlet class と呼ぶ
 
 ```mermaid
-flowchart TB
-    subgraph T["Tomcat が担当（どの Web サーバでも同じ）"]
-        A["リクエストを待つ"] --> B["HTTP を読み取る"] --> C["パスを見て振り分ける"]
+flowchart LR
+    B["ブラウザ"] -- "リクエスト<br/>/hello" --> A
+    subgraph T["Tomcat（どの Web サーバでも同じ）"]
+        A["受け取る"] --> C["パスを見て<br/>振り分ける"]
+        W["レスポンスを<br/>返す"]
     end
-    subgraph S["Servlet class が担当（自分で書く）"]
-        D["ページを作る"]
+    subgraph S["Servlet class（自分で書く）"]
+        S1["/hello の<br/>ページを作る"]
+        S2["/news の<br/>ページを作る"]
+        S3["/search の<br/>ページを作る"]
     end
-    C --> D
+    C --> S1
+    C -.-> S2
+    C -.-> S3
+    S1 --> W
+    W -- レスポンス --> B
 ```
+
+パスが `/hello` なので、Tomcat は `/hello` の Servlet class を選びます。点線の Servlet class は、別のパスのリクエストが来たときに選ばれます。
 
 こう分けると、自分で書くのはページを作る部分だけになります。
 
