@@ -17,7 +17,7 @@ public class HelloServlet extends HttpServlet {
 
 Tomcat は、アプリを読み込むときに `@WebServlet` を探し、「`/hello` なら `HelloServlet`」という対応表を作ります。
 
-1つのクラスに、複数のパスを受け持たせることもできます。
+1つの Servlet class に、複数のパスを受け持たせることもできます。
 
 ```java
 @WebServlet({"/hello", "/hi"})
@@ -27,7 +27,7 @@ Tomcat は、アプリを読み込むときに `@WebServlet` を探し、「`/he
 
 ## 方法2: `web.xml` に書く
 
-アプリの中の `WEB-INF/web.xml` というファイルに、対応を書く方法もあります。
+WAR ファイルの中の `WEB-INF/` フォルダに置く `web.xml` というファイルに、対応を書く方法もあります。
 
 ```xml
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="6.1">
@@ -45,7 +45,7 @@ Tomcat は、アプリを読み込むときに `@WebServlet` を探し、「`/he
 
 `<servlet>` で Servlet class に `hello` という名前を付け、`<servlet-mapping>` でその名前とパスを結び付けます。
 
-この方法では、すべての対応を1つのファイルで見渡せます。古いアプリでは、この方法がよく使われています。
+この方法では、すべての対応を1つのファイルで見渡せます。`@WebServlet` が使えるようになる前は、この方法しかなかったため、古いアプリでよく使われています。
 
 ## パスの書き方
 
@@ -64,9 +64,8 @@ Tomcat は、アプリを読み込むときに `@WebServlet` を探し、「`/he
 
 ## 気をつけること
 
-- パスに、コンテキストパスは書かない。`myapp.war` の `@WebServlet("/hello")` は、URL では `/myapp/hello` になる
-- `GET` か `POST` かは、ここでは分けない。分けたいときは、`doGet` と `doPost` を書き分ける
-- `/users/{id}` のような書き方はできない。`/users/*` で受けて、`getPathInfo()` の値から取り出す
+- パスに、[コンテキストパス](../02-servlet-and-tomcat/03-what-is-tomcat.md) は書かない。`myapp.war` の `@WebServlet("/hello")` は、URL では `/myapp/hello` になる
+- パスの対応付けでは、`GET` か `POST` かを区別しない。区別は `doGet` と `doPost` を書き分けて行う（[3節](03-service-dispatch.md) で説明する）
 - 同じパスを、2つの Servlet class に受け持たせない。アプリを読み込むときにエラーになる
 
 ---

@@ -27,7 +27,7 @@ public class HelloServlet extends HttpServlet {
 - `req`: 届いたリクエスト
 - `resp`: これから返すレスポンス。ここに中身を書き込む
 
-前のファイルの `RawServer` と比べてください。リクエストを待つ処理も、HTTP の文字を組み立てる処理もありません。それらは Tomcat が受け持つからです。
+前のページの `RawServer` と比べてください。リクエストを待つ処理も、HTTP の文字を組み立てる処理もありません。それらは Tomcat が受け持つからです。
 
 ## 「Servlet」という言葉が指すもの
 

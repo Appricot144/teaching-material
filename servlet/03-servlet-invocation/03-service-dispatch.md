@@ -8,7 +8,21 @@
 
 Tomcat は、どの Servlet class に対しても、同じ `service()` というメソッドを呼びます。`doGet` を直接呼ぶわけではありません。
 
-`service()` は、自分では書いていません。`HelloServlet` は `extends HttpServlet` と書いたので、`HttpServlet` が持つ `service()` を受け継いでいます。
+[2章4節](../02-servlet-and-tomcat/04-relationships.md) では、Tomcat が `doGet` を呼ぶイメージで説明しました。実際は、`service()` を通して `doGet` が呼ばれます。
+
+自分で書いた `HelloServlet` を、もう一度見てみます。中身は省いています。
+
+```java
+@WebServlet("/hello")
+public class HelloServlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        // 自分で書いた処理
+    }
+}
+```
+
+`service()` は、どこにも書いていません。`HelloServlet` は `extends HttpServlet` と書いたので、`HttpServlet` が持つ `service()` を受け継いでいます。
 
 ## `service()` がすること
 
@@ -17,33 +31,39 @@ Tomcat は、どの Servlet class に対しても、同じ `service()` という
 - `GET` なら `doGet()` を呼ぶ
 - `POST` なら `doPost()` を呼ぶ
 
-```mermaid
-sequenceDiagram
-    participant T as Tomcat
-    participant H as HttpServlet から受け継いだ service()
-    participant S as 自分で書いた doGet()
-    T->>H: service(req, resp)
-    H->>H: HTTP メソッドを確かめる（GET だった）
-    H->>S: doGet(req, resp)
+中身は、イメージとしては次のようになっています。
+
+```java
+// HttpServlet の service()（イメージ）
+protected void service(HttpServletRequest req, HttpServletResponse resp) {
+    String method = req.getMethod();
+    if (method.equals("GET")) {
+        doGet(req, resp);
+    } else if (method.equals("POST")) {
+        doPost(req, resp);
+    }
+}
 ```
+
+HTTP メソッドを `if` で確かめて、対応するメソッドを呼んでいるだけです。
+
+## 自分の `doGet` が呼ばれる理由
+
+`service()` の中の `doGet(req, resp)` は、`HttpServlet` のコードです。それなのに、なぜ自分で書いた `doGet` が動くのでしょうか。
+
+理由は、`HelloServlet` が `doGet` を上書き（オーバーライド）しているからです。上の `HelloServlet` の `@Override` は、上書きしていることを表す印です。2章4節で見たとおり、上書きしたメソッドを呼ぶと、オブジェクトが持っている上書きした側のメソッドが動きます。`service()` から呼ぶ `doGet` も同じです。`HelloServlet` のオブジェクトでは、自分で書いた `doGet` が動きます。
 
 このしくみのおかげで、自分は `doGet` や `doPost` に、それぞれのときの処理を書くだけで済みます。
 
-## 誰が何を決めているか
-
-リクエストが届いてから処理が終わるまでに、決めることと担当は次のとおりです。
-
-1. HTTP を読み取る: Tomcat
-2. どの Servlet class を呼ぶかを選ぶ: Tomcat
-3. 選んだ Servlet class の `service()` を呼ぶ: Tomcat
-4. `doGet` と `doPost` のどちらを呼ぶかを選ぶ: `HttpServlet` の `service()`
-5. 何を返すかを決める: 自分で書いた `doGet` や `doPost`
-
-## 書いていないメソッドが呼ばれたとき
+## 上書きしていないメソッドが呼ばれたとき
 
 `doPost` だけを書いた Servlet class に、`GET` のリクエストが来たとします。
 
-このとき、`HttpServlet` が用意している `doGet` が呼ばれます。このメソッドは、`405 Method Not Allowed`（その HTTP メソッドには対応していない）を返します。
+`doGet` は上書きしていないので、`HttpServlet` がもともと持っている `doGet` が呼ばれます。このメソッドは、`405 Method Not Allowed`（その HTTP メソッドには対応していない）を返します。
+
+メソッドの名前を書き間違えたときも同じです。`doget` のように書くと、`doGet` の上書きにはならず、別の新しいメソッドになります。`GET` のリクエストが来ても `HttpServlet` の `doGet` が呼ばれ、`405` が返ります。
+
+`HelloServlet` の `doGet` に `@Override` を付けているのは、この書き間違いを防ぐためです。`@Override` を付けたメソッドが何も上書きしていないと、コンパイルエラーになります。
 
 ## この振り分けは決まりの一部
 
