@@ -37,4 +37,4 @@ Web のページを指すときは、ふつう「URL」と呼びます。
 
 ---
 
-前: [ハイパーテキストとは何か](appendix-a-hypertext.md) ｜ 次: [Java で Web サーバを作るにはどうするのか](../02-servlet-and-tomcat/01-java-web-server.md)
+前: [ハイパーテキストとは何か](appendix-a-hypertext.md) ｜ 次: [2章 Servlet と Tomcat](../02-servlet-and-tomcat/README.md)

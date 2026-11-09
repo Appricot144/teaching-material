@@ -70,4 +70,4 @@ myapp.war
 
 ---
 
-前: [入力値を HTML に埋め込むとなぜ危険なのか](../04-html-response/04-xss-and-escaping.md) ｜ 次: [JSP はどうやって Servlet class になるのか](02-jsp-to-servlet-class.md)
+前: [5章 JSP](README.md) ｜ 次: [JSP はどうやって Servlet class になるのか](02-jsp-to-servlet-class.md)

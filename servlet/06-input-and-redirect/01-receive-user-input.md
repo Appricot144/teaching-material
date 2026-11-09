@@ -99,4 +99,4 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws I
 
 ---
 
-前: [JSP で HTML を返すにはどう書くのか](../05-jsp/04-return-html-with-jsp.md) ｜ 次: [リダイレクトとは何か](02-what-is-redirect.md)
+前: [6章 ユーザの入力とリダイレクト](README.md) ｜ 次: [リダイレクトとは何か](02-what-is-redirect.md)

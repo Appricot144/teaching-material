@@ -90,4 +90,4 @@ Tomcat のドキュメント:
 
 ---
 
-前: [Tomcat とは何か](03-what-is-tomcat.md) ｜ 次: [URL と Servlet class をどう対応付けるのか](../03-servlet-invocation/01-url-mapping.md)
+前: [Tomcat とは何か](03-what-is-tomcat.md) ｜ 次: [3章 Servlet class の呼び出し](../03-servlet-invocation/README.md)

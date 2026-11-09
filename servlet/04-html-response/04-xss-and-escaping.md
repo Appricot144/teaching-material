@@ -112,4 +112,4 @@ XSS とその防ぎ方:
 
 ---
 
-前: [レスポンスはいつ送信されるのか](03-response-commit.md) ｜ 次: [JSP とは何か](../05-jsp/01-what-is-jsp.md)
+前: [レスポンスはいつ送信されるのか](03-response-commit.md) ｜ 次: [5章 JSP](../05-jsp/README.md)

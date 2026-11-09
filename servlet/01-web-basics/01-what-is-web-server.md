@@ -91,4 +91,4 @@ Servlet は、動的ページを作るプログラムを Java で書くための
 
 ---
 
-次: [入力を受けて出力するプログラムとどう違うのか](02-web-server-vs-program.md)
+前: [1章 Web の基礎](README.md) ｜ 次: [入力を受けて出力するプログラムとどう違うのか](02-web-server-vs-program.md)

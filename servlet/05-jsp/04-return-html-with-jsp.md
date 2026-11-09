@@ -134,4 +134,4 @@ Tomcat のドキュメント:
 
 ---
 
-前: [Servlet class から JSP へどう処理と値を渡すのか](03-forward-and-attributes.md) ｜ 次: [ユーザの入力をどう受け取るのか](../06-input-and-redirect/01-receive-user-input.md)
+前: [Servlet class から JSP へどう処理と値を渡すのか](03-forward-and-attributes.md) ｜ 次: [6章 ユーザの入力とリダイレクト](../06-input-and-redirect/README.md)

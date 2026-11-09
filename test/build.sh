@@ -28,6 +28,8 @@ write_md() {
 }
 write_md alpha/README.md
 write_md alpha/01-chapter/01-page.md
+write_md alpha/01-chapter/README.md
+printf '# page\n\n[表紙](README.md)\n' > "$fixture/alpha/01-chapter/02-page.md"
 write_md alpha/DRAFT-top.md
 write_md alpha/01-chapter/DRAFT-page.md
 write_md alpha/.claude/rules/rule.md
@@ -42,6 +44,11 @@ fdist="$fixture/dist"
 [[ -f "$fdist/alpha/index.html" ]] || fail "引数なし: alpha/index.html がない"
 [[ -f "$fdist/alpha/01-chapter/01-page.html" ]] || fail "引数なし: alpha/01-chapter/01-page.html がない"
 [[ -f "$fdist/beta/index.html" ]] || fail "引数なし: beta/index.html がない"
+
+# 章のディレクトリの README.md は、章の表紙として index.html にする
+[[ -f "$fdist/alpha/01-chapter/index.html" ]] || fail "引数なし: 章の表紙 alpha/01-chapter/index.html がない"
+[[ -e "$fdist/alpha/01-chapter/README.html" ]] && fail "章の表紙が README.html として出力されている"
+grep -q 'href="index.html"' "$fdist/alpha/01-chapter/02-page.html" || fail "章の表紙へのリンクが index.html になっていない"
 
 # DRAFT*.md は下書きなので、HTML にしない
 while IFS= read -r entry; do

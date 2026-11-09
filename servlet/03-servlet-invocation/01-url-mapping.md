@@ -70,4 +70,4 @@ WAR ファイルの中の `WEB-INF/` フォルダに置く `web.xml` という�
 
 ---
 
-前: [仕様、API、Servlet class、Tomcat はどう関係するのか](../02-servlet-and-tomcat/04-relationships.md) ｜ 次: [リクエストから Servlet class が呼ばれるまでに何が起こるのか](02-request-flow.md)
+前: [3章 Servlet class の呼び出し](README.md) ｜ 次: [リクエストから Servlet class が呼ばれるまでに何が起こるのか](02-request-flow.md)

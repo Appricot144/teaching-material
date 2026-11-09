@@ -89,4 +89,4 @@ flowchart LR
 
 ---
 
-前: [URI とは何か](../01-web-basics/appendix-b-uri.md) ｜ 次: [Servlet とは何か](02-what-is-servlet.md)
+前: [2章 Servlet と Tomcat](README.md) ｜ 次: [Servlet とは何か](02-what-is-servlet.md)

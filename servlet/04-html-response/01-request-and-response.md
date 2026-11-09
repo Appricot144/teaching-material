@@ -77,4 +77,4 @@ HTTP のレスポンスでは、ステータス行とヘッダーが、ボディ
 
 ---
 
-前: [Servlet class は同時アクセスをどう処理するのか](../03-servlet-invocation/04-instance-and-threads.md) ｜ 次: [HTML をレスポンスとして返すにはどうするのか](02-return-html.md)
+前: [4章 HTML を返す](README.md) ｜ 次: [HTML をレスポンスとして返すにはどうするのか](02-return-html.md)

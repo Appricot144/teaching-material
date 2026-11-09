@@ -119,4 +119,4 @@ Tomcat のドキュメント:
 
 ---
 
-前: [`doGet()` や `doPost()` は誰が振り分けるのか](03-service-dispatch.md) ｜ 次: [リクエストとレスポンスをどう扱うのか](../04-html-response/01-request-and-response.md)
+前: [`doGet()` や `doPost()` は誰が振り分けるのか](03-service-dispatch.md) ｜ 次: [4章 HTML を返す](../04-html-response/README.md)
