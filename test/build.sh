@@ -29,6 +29,10 @@ write_md() {
 write_md alpha/README.md
 write_md alpha/01-chapter/01-page.md
 write_md alpha/01-chapter/README.md
+# 図: HTML で書いた図の元と、そこから作った画像
+mkdir -p "$fixture/alpha/01-chapter/figures"
+printf '<!DOCTYPE html>\n<div class="figure">図</div>\n' > "$fixture/alpha/01-chapter/figures/fig.html"
+printf '\x89PNG\r\n\x1a\n' > "$fixture/alpha/01-chapter/figures/fig.png"
 printf '# page\n\n[表紙](README.md)\n' > "$fixture/alpha/01-chapter/02-page.md"
 write_md alpha/DRAFT-top.md
 write_md alpha/01-chapter/DRAFT-page.md
@@ -49,6 +53,10 @@ fdist="$fixture/dist"
 [[ -f "$fdist/alpha/01-chapter/index.html" ]] || fail "引数なし: 章の表紙 alpha/01-chapter/index.html がない"
 [[ -e "$fdist/alpha/01-chapter/README.html" ]] && fail "章の表紙が README.html として出力されている"
 grep -q 'href="index.html"' "$fdist/alpha/01-chapter/02-page.html" || fail "章の表紙へのリンクが index.html になっていない"
+
+# 教材の中の画像は、同じ相対パスで dist/ にコピーする。図の元の HTML はコピーしない
+cmp -s "$fixture/alpha/01-chapter/figures/fig.png" "$fdist/alpha/01-chapter/figures/fig.png" || fail "画像が dist/ にコピーされていない"
+[[ -e "$fdist/alpha/01-chapter/figures/fig.html" ]] && fail "図の元の HTML が dist/ にコピーされている"
 
 # DRAFT*.md は下書きなので、HTML にしない
 while IFS= read -r entry; do

@@ -59,6 +59,19 @@ path_to_topic() {
   done
 }
 
+# トピックの中の画像を、同じ相対パスで dist/ にコピーする
+# figures/*.html は図の元なのでコピーしない（bin/figures で作った PNG だけをコピーする）
+copy_images() {
+  local topic="$1" src rel
+  while IFS= read -r src; do
+    rel="${src#"$root"/}"
+    mkdir -p "$dist/$(dirname "$rel")"
+    cp "$src" "$dist/$rel"
+    echo "dist/$rel"
+  done < <(find "$root/$topic" \( -name '*.png' -o -name '*.svg' -o -name '*.jpg' -o -name '*.gif' \) \
+             -not -path '*/.claude/*' -type f | sort)
+}
+
 # トピックのディレクトリに CSS を同梱する（初回だけコピーする）
 copy_assets() {
   local assets="$dist/$1/assets"
@@ -135,6 +148,7 @@ for topic in "${topics[@]}"; do
     echo "${html#"$root"/}"
     count=$((count + 1))
   done < <(find_sources_in "$topic")
+  copy_images "$topic"
 done
 
 echo "$count ファイルを変換しました"

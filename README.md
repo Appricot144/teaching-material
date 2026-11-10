@@ -7,12 +7,14 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 ```text
 ├─ servlet/           教材（トピックごとのディレクトリ。README.md が目次）
 ├─ bin/build          ビルドスクリプト
+├─ bin/figures        HTML で書いた図を PNG にするスクリプト
 ├─ build/
 │  ├─ links.lua       .md へのリンクを .html に置き換える pandoc フィルター
 │  ├─ mermaid.json    Mermaid の描画設定
 │  └─ style.css       HTML のスタイル
 ├─ test/build.sh      ビルド結果のテスト
-├─ .puppeteerrc.cjs   mmdc が使う Chromium の設定
+├─ test/figures.sh    bin/figures のテスト
+├─ .puppeteerrc.cjs   mmdc と bin/figures が使う Chromium の設定
 └─ dist/              ビルドの出力先
 ```
 
@@ -20,8 +22,21 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 
 - 教材は、リポジトリ直下のトピックのディレクトリに置きます。直下の Markdown はビルドされません。
 - 下書きは `DRAFT` で始まる名前（`DRAFT-what-is-di.md` など）にします。下書きはビルドされません。
-- 図は Mermaid のコードブロックで書きます。
+- 図は Mermaid のコードブロックで書きます。流れや関係のように、箱と矢印で表せる図に向いています。
+- 位置や形を自分で決めたい図は、HTML で書いて PNG にします。詳しくは「HTML で書く図」を見てください。
 - 他の教材へのリンクは、`.md` ファイルへの相対パスで書きます。
+
+## HTML で書く図
+
+Mermaid では描きにくい図（文字列の一部に穴を開けて見せる図など）は、HTML と CSS で書き、PNG に変換して Markdown に取り込みます。
+
+1. 図を使う Markdown と同じディレクトリに `figures/` を作り、図の HTML を置く（例: `servlet/05-jsp/figures/template-slot.html`）
+2. HTML の中で、画像にしたい要素に `class="figure"` を付ける
+3. `bin/figures`（または `npm run figures`）を実行する。`figures/*.html` ごとに、同じ名前の PNG ができる
+4. Markdown から画像として読み込む（例: `![テンプレートの穴に値がはまる様子](figures/template-slot.png)`）
+5. HTML と PNG の両方をコミットする
+
+PNG は、`class="figure"` の要素だけを2倍の解像度で撮ったものです。HTML を直したら、`bin/figures` で PNG を作り直してからコミットします。PNG もコミットするのは、GitHub で Markdown を見たときにも図が出るようにするためです。
 
 ## 必要なもの
 
@@ -44,6 +59,8 @@ bin/build servlet spring   # 複数のトピックを指定する
 
 1. Mermaid のコードブロックを SVG に変換する
 2. pandoc で HTML に変換し、`.md` へのリンクを `.html` に置き換える
+
+トピックの中の画像（`.png`、`.svg`、`.jpg`、`.gif`）は、同じ相対パスで `dist/` にコピーします。`figures/*.html` は図の元なので、コピーしません。
 
 `README.md` は `index.html` として出力します。
 

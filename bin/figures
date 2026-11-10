@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+// 教材の figures/ ディレクトリにある HTML の図を、同じ名前の PNG に変換する。
+//
+//   bin/figures      すべての figures/*.html を PNG にする
+//
+// 図の HTML では、画像にしたい要素に class="figure" を付ける。その要素だけを、2倍の解像度で撮る。
+// できた PNG はコミットする（GitHub で Markdown を見たときにも図が出るように）。
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '..');
+const puppeteer = require(path.join(root, 'node_modules', 'puppeteer'));
+const config = require(path.join(root, '.puppeteerrc.cjs'));
+
+// 教材以外のディレクトリは探さない
+const skip = new Set(['.git', 'node_modules', 'dist', 'bin', 'build', 'test', '.claude']);
+
+function findFigures(dir) {
+  const found = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (skip.has(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      found.push(...findFigures(full));
+    } else if (entry.name.endsWith('.html') && path.basename(dir) === 'figures') {
+      found.push(full);
+    }
+  }
+  return found;
+}
+
+async function main() {
+  const figures = findFigures(root).sort();
+  if (figures.length === 0) {
+    console.log('図はありません');
+    return;
+  }
+
+  const browser = await puppeteer.launch({ executablePath: config.executablePath });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 800, deviceScaleFactor: 2 });
+    for (const html of figures) {
+      await page.goto('file://' + html, { waitUntil: 'load' });
+      const figure = await page.$('.figure');
+      if (!figure) {
+        throw new Error(`class="figure" の要素がありません: ${path.relative(root, html)}`);
+      }
+      const png = html.replace(/\.html$/, '.png');
+      await figure.screenshot({ path: png });
+      console.log(path.relative(root, png));
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
+main().catch((err) => {
+  console.error(err.message);
+  process.exit(1);
+});
