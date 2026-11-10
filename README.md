@@ -38,6 +38,8 @@ Mermaid では描きにくい図（文字列の一部に穴を開けて見せる
 
 PNG は、`class="figure"` の要素だけを2倍の解像度で撮ったものです。HTML を直したら、`bin/figures` で PNG を作り直してからコミットします。PNG もコミットするのは、GitHub で Markdown を見たときにも図が出るようにするためです。
 
+作り直し忘れは、`bin/figures --check` で見つけられます。PNG には元の HTML のハッシュ値が書き込んであり、今の HTML と合わない PNG と、元の HTML がない PNG を「古い PNG」として表示します。`npm test`（`test/figures.sh`）もこの確認を行い、端末から実行したときは、古い PNG を削除するかを y/n で聞きます。
+
 ## 必要なもの
 
 - pandoc

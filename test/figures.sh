@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# bin/figures を実行し、figures/ の HTML から PNG を作れることを確かめる。
+# bin/figures を実行し、figures/ の HTML から PNG を作れることと、古い PNG を見つけられることを確かめる。
+# 実際の教材に古い PNG があれば報告する。端末から実行したときは、削除するかを y/n で聞く。
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -47,6 +48,43 @@ else
 fi
 
 [[ -e "$fixture/alpha/02-chapter/other.png" ]] && fail "figures/ の外の HTML から画像が作られた"
+
+# --- 古い PNG を見つける（bin/figures --check） ---
+
+# 作ったばかりの PNG は古くない
+"$fixture/bin/figures" --check > /dev/null || fail "--check: 作ったばかりの PNG が古いと判定された"
+
+# HTML を直したのに PNG を作り直していなければ、古い PNG として報告する
+printf '<!-- 直した -->\n' >> "$fixture/alpha/01-chapter/figures/slot.html"
+out="$("$fixture/bin/figures" --check)" && fail "--check: HTML を直したのに成功した"
+grep -qx 'alpha/01-chapter/figures/slot.png' <<< "$out" || fail "--check: 直した HTML の PNG が報告されていない: $out"
+
+# 元の HTML がない PNG も、古い PNG として報告する
+cp "$png" "$fixture/alpha/01-chapter/figures/orphan.png"
+out="$("$fixture/bin/figures" --check)" || true
+grep -qx 'alpha/01-chapter/figures/orphan.png' <<< "$out" || fail "--check: 元の HTML がない PNG が報告されていない: $out"
+
+# 作り直すと、元の HTML がある PNG は古くなくなる
+rm "$fixture/alpha/01-chapter/figures/orphan.png"
+"$fixture/bin/figures" > /dev/null
+"$fixture/bin/figures" --check > /dev/null || fail "--check: 作り直したのに古いと判定された"
+
+# --- 実際の教材に、古い PNG がないかを確かめる ---
+
+if ! stale="$("$root/bin/figures" --check)"; then
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    # 端末から実行したときだけ、削除するかを聞く。端末でなければ、止まらずに報告だけする
+    if [[ -t 0 && -t 1 ]]; then
+      read -r -p "古い PNG があります: $rel 削除しますか? [y/n] " answer < /dev/tty
+      if [[ "$answer" == y ]]; then
+        rm "$root/$rel"
+        echo "削除しました: $rel"
+      fi
+    fi
+    fail "古い PNG: $rel（bin/figures で作り直すか、元の HTML がなければ削除してください）"
+  done <<< "$stale"
+fi
 
 if ((failures > 0)); then
   echo "$failures 件の失敗" >&2
