@@ -33,6 +33,7 @@ write_md alpha/01-chapter/README.md
 mkdir -p "$fixture/alpha/01-chapter/figures"
 printf '<!DOCTYPE html>\n<div class="figure">図</div>\n' > "$fixture/alpha/01-chapter/figures/fig.html"
 printf '\x89PNG\r\n\x1a\n' > "$fixture/alpha/01-chapter/figures/fig.png"
+printf '# page\n\n![図](figures/fig.png)\n\n![写真](photo.png)\n' > "$fixture/alpha/01-chapter/03-page.md"
 printf '# page\n\n[表紙](README.md)\n' > "$fixture/alpha/01-chapter/02-page.md"
 write_md alpha/DRAFT-top.md
 write_md alpha/01-chapter/DRAFT-page.md
@@ -57,6 +58,10 @@ grep -q 'href="index.html"' "$fdist/alpha/01-chapter/02-page.html" || fail "章�
 # 教材の中の画像は、同じ相対パスで dist/ にコピーする。図の元の HTML はコピーしない
 cmp -s "$fixture/alpha/01-chapter/figures/fig.png" "$fdist/alpha/01-chapter/figures/fig.png" || fail "画像が dist/ にコピーされていない"
 [[ -e "$fdist/alpha/01-chapter/figures/fig.html" ]] && fail "図の元の HTML が dist/ にコピーされている"
+
+# figures/ の PNG は2倍の解像度で撮っているので、srcset で 2x と伝える。それ以外の画像には付けない
+grep -q 'srcset="figures/fig.png 2x"' "$fdist/alpha/01-chapter/03-page.html" || fail "figures/ の画像に srcset が付いていない"
+grep -q 'photo.png[^>]*srcset\|srcset="photo.png' "$fdist/alpha/01-chapter/03-page.html" && fail "figures/ の外の画像に srcset が付いている"
 
 # DRAFT*.md は下書きなので、HTML にしない
 while IFS= read -r entry; do
