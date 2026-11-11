@@ -170,4 +170,4 @@ Tomcat のドキュメント:
 
 ---
 
-前: [Servlet class から JSP へどう処理と値を渡すのか](03-forward-and-attributes.md) ｜ 次: [6章 ユーザの入力とリダイレクト](../06-input-and-redirect/README.md)
+前: [Servlet class から JSP へどう処理と値を渡すのか](03-forward-and-attributes.md) ｜ 次: [6章 入力を受け取り、結果を返す](../06-input-and-redirect/README.md)

@@ -63,8 +63,10 @@ Spring などのフレームワークは使いません。コード例では `im
 3. [Servlet class から JSP へどう処理と値を渡すのか](05-jsp/03-forward-and-attributes.md)
 4. [JSP で HTML を返すにはどう書くのか](05-jsp/04-return-html-with-jsp.md)
 
-### 6. ユーザの入力とリダイレクト [🔗](06-input-and-redirect/README.md)
+### 6. 入力を受け取り、結果を返す [🔗](06-input-and-redirect/README.md)
 
 1. [ユーザの入力をどう受け取るのか](06-input-and-redirect/01-receive-user-input.md)
-2. [リダイレクトとは何か](06-input-and-redirect/02-what-is-redirect.md)
-3. [POST の二重送信をどう防ぐのか](06-input-and-redirect/03-prg-pattern.md)
+2. [受け取った値をどう処理するのか](06-input-and-redirect/02-process-input.md)
+3. [処理した結果をどう返すのか](06-input-and-redirect/03-return-result.md)
+4. [リダイレクトとは何か](06-input-and-redirect/04-what-is-redirect.md)
+5. [POST の二重送信をどう防ぐのか](06-input-and-redirect/05-prg-pattern.md)

@@ -38,7 +38,7 @@ sequenceDiagram
 
 - バッファがいっぱいになった: 大きなボディを書いたとき
 - 送るように頼んだ: `resp.flushBuffer()` を呼んだとき
-- レスポンスを決めてしまうメソッドを呼んだ: エラーを返す `resp.sendError()` や、リダイレクトする `resp.sendRedirect()`（[6章2節](../06-input-and-redirect/02-what-is-redirect.md)）を呼んだとき
+- レスポンスを決めてしまうメソッドを呼んだ: エラーを返す `resp.sendError()` や、リダイレクトする `resp.sendRedirect()`（[6章4節](../06-input-and-redirect/04-what-is-redirect.md)）を呼んだとき
 
 送り始めた状態を、コミットされたと呼びます。`resp.isCommitted()` で確かめられます。
 

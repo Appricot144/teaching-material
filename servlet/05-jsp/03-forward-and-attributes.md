@@ -103,7 +103,7 @@ sequenceDiagram
 >
 > 相手には、JSP のファイルだけでなく、`@WebServlet` で決めたパスも指定できます。たとえば `"/hello"` と書くと、`/hello` を受け持つ Servlet class に引き継ぎます。
 >
-> 一方、ブラウザが読むパスには、コンテキストパスが要ります。ブラウザはアプリの外にいて、どのアプリかを URL で伝える必要があるからです。[6章2節](../06-input-and-redirect/02-what-is-redirect.md) のリダイレクトでは、ブラウザに開き直してほしい URL を渡すので、`req.getContextPath()` でコンテキストパスを付けます。
+> 一方、ブラウザが読むパスには、コンテキストパスが要ります。ブラウザはアプリの外にいて、どのアプリかを URL で伝える必要があるからです。[6章4節](../06-input-and-redirect/04-what-is-redirect.md) のリダイレクトでは、ブラウザに開き直してほしい URL を渡すので、`req.getContextPath()` でコンテキストパスを付けます。
 
 ---
 

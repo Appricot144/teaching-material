@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>フォームからリクエストが送られる様子</title>
+<style>
+  body { margin: 0; background: #fff; font-family: "Noto Sans CJK JP", sans-serif; color: #222; }
+  .figure { display: inline-flex; align-items: center; gap: 28px; padding: 28px 32px; background: #fff; }
+
+  /* ブラウザの窓 */
+  .browser { width: 300px; border: 1px solid #b8bfcc; border-radius: 8px; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #eef0f4; border-bottom: 1px solid #d5d9e0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #c9ced8; }
+  .page { padding: 26px 22px; display: flex; gap: 10px; align-items: center; }
+  .input { flex: 1; border: 1px solid #9aa3b2; border-radius: 4px; padding: 6px 10px; font-size: 17px;
+           font-family: "Noto Sans Mono CJK JP", monospace; background: #fff3b0; }
+  .button { border: 1px solid #7a8496; border-radius: 4px; padding: 6px 14px; font-size: 15px; background: #f4f5f7; }
+
+  .arrow { font-size: 30px; color: #cc5555; }
+
+  /* リクエスト */
+  .request { font-family: "Noto Sans Mono CJK JP", monospace; font-size: 16px; line-height: 1.8;
+             white-space: pre; padding: 14px 18px; border: 1px solid #ccc; border-radius: 6px; background: #f7f7f7; }
+  .value { background: #fff3b0; border-radius: 3px; padding: 1px 2px; }
+
+  /* サーバ */
+  .server { border: 2px solid #5b6b85; border-radius: 8px; padding: 12px 16px; text-align: center; }
+  .server .name { font-size: 15px; color: #5b6b85; margin-bottom: 8px; }
+  .servlet { border: 1px solid #9aa3b2; border-radius: 6px; padding: 8px 12px; background: #fff;
+             font-family: "Noto Sans Mono CJK JP", monospace; font-size: 15px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="figure">
+  <div class="browser">
+    <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+    <div class="page">
+      <div class="input">taro</div>
+      <div class="button">送信</div>
+    </div>
+  </div>
+  <div class="arrow">➜</div>
+  <div class="request">GET /myapp/hello?<span class="value">name=taro</span> HTTP/1.1
+Host: localhost:8080</div>
+  <div class="arrow">➜</div>
+  <div class="server">
+    <div class="name">Tomcat</div>
+    <div class="servlet">HelloServlet<br>doGet()</div>
+  </div>
+</div>
+</body>
+</html>
