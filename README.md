@@ -1,11 +1,34 @@
 # teaching-materials
 
-Markdown で書いた教材を、ブラウザで読む HTML に変換するリポジトリです。
+教えるときに使う教材をためておくリポジトリです。教材は Markdown で書き、トピックごとのディレクトリにまとめています。
 
-## ディレクトリ構成
+執筆やビルドのための仕組みも入っていますが、それは教材を作るための補助です。
+
+## 教材
+
+| トピック | 内容 |
+|---|---|
+| [servlet/](servlet/README.md) | Web の基礎から、Tomcat 上で動く Servlet class と JSP の書き方まで |
+| spring/ | `servlet/` の続きとして Spring を扱う教材（準備中） |
+
+各トピックの `README.md` が目次です。
+
+## 教材の読み方
+
+- GitHub 上で Markdown のまま読めます。図も表示されます。
+- ブラウザで読みやすい HTML にしたいときは、`bin/build` でビルドし、`dist/<トピック>/index.html` を開きます。ビルドのしかたは「[執筆のための仕組み](#執筆のための仕組み)」を見てください。
+
+## 執筆のための仕組み
+
+ここからは、教材を書く・ビルドする人向けの説明です。
+
+教材を書くときのルール（想定する読者、説明の進め方など）は、`.claude/rules/` と各トピックの `.claude/rules/` に置いています。
+
+### ディレクトリ構成
 
 ```text
-├─ servlet/           教材（トピックごとのディレクトリ。README.md が目次）
+├─ servlet/, spring/  教材（トピックごとのディレクトリ。README.md が目次）
+├─ .claude/rules/     教材を書くときのルール
 ├─ bin/build          ビルドスクリプト
 ├─ bin/figures        HTML で書いた図を PNG にするスクリプト
 ├─ build/
@@ -18,7 +41,7 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 └─ dist/              ビルドの出力先
 ```
 
-## 書き方
+### 書き方
 
 - 教材は、リポジトリ直下のトピックのディレクトリに置きます。直下の Markdown はビルドされません。
 - 下書きは `DRAFT` で始まる名前（`DRAFT-what-is-di.md` など）にします。下書きはビルドされません。
@@ -26,7 +49,7 @@ Markdown で書いた教材を、ブラウザで読む HTML に変換するリ�
 - 位置や形を自分で決めたい図は、HTML で書いて PNG にします。詳しくは「HTML で書く図」を見てください。
 - 他の教材へのリンクは、`.md` ファイルへの相対パスで書きます。
 
-## HTML で書く図
+### HTML で書く図
 
 Mermaid では描きにくい図（文字列の一部に穴を開けて見せる図など）は、HTML と CSS で書き、PNG に変換して Markdown に取り込みます。
 
@@ -40,12 +63,12 @@ PNG は、`class="figure"` の要素だけを2倍の解像度で撮ったもの�
 
 作り直し忘れは、`bin/figures --check` で見つけられます。PNG には元の HTML のハッシュ値が書き込んであり、今の HTML と合わない PNG と、元の HTML がない PNG を「古い PNG」として表示します。`npm test`（`test/figures.sh`）もこの確認を行い、端末から実行したときは、古い PNG を削除するかを y/n で聞きます。
 
-## 必要なもの
+### 必要なもの
 
 - pandoc
 - Chromium（`/usr/bin/chromium`。場所が違う場合は `.puppeteerrc.cjs` を変更する）
 
-## ビルドのしかた
+### ビルドのしかた
 
 ```bash
 bin/build                  # すべてのトピックをビルドする
@@ -55,7 +78,7 @@ bin/build servlet spring   # 複数のトピックを指定する
 
 `npm run build -- servlet` のように、npm からも指定できます。
 
-## ビルドの仕様
+### ビルドの仕様
 
 教材の Markdown ごとに、次の処理を行います。
 
