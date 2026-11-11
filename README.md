@@ -1,104 +1,25 @@
 # teaching-materials
 
-教えるときに使う教材をためておくリポジトリです。教材は Markdown で書き、トピックごとのディレクトリにまとめています。
+教えるときに使う教材をためておくリポジトリです。教材はトピックごとのディレクトリにまとめていて、各トピックの `README.md` が目次です。
 
-執筆やビルドのための仕組みも入っていますが、それは教材を作るための補助です。
+## 教材の一覧
 
-## 教材
+| トピック | 内容 | 状態 |
+|---|---|---|
+| [Servlet と Tomcat の入門](servlet/README.md) | Web の基礎から、Tomcat 上で動く Servlet class と JSP の書き方まで | 公開中 |
+| Spring | `servlet/` の続きとして Spring を扱う | 準備中 |
 
-| トピック | 内容 |
+## Servlet と Tomcat の入門
+
+Web の基礎から、Tomcat 上で動く Servlet class と JSP の書き方までを順に説明する教材です。1ファイルで1つの疑問に答えるので、気になるファイルだけを読むこともできます。
+
+| 章 | 扱うこと |
 |---|---|
-| [servlet/](servlet/README.md) | Web の基礎から、Tomcat 上で動く Servlet class と JSP の書き方まで |
-| spring/ | `servlet/` の続きとして Spring を扱う教材（準備中） |
+| [1章 Web の基礎](servlet/01-web-basics/README.md) | Web サーバとは何か、URL と HTTP でブラウザと Web サーバがどうやり取りするのか |
+| [2章 Servlet と Tomcat](servlet/02-servlet-and-tomcat/README.md) | 自分で書く Servlet class と、それを動かす Tomcat の受け持ち |
+| [3章 Servlet class の呼び出し](servlet/03-servlet-invocation/README.md) | URL と Servlet class の対応付けから、`doGet` が呼ばれるまでの流れ |
+| [4章 HTML を返す](servlet/04-html-response/README.md) | リクエストを読んで HTML を返す方法と、入力値を HTML に入れるときの危険 |
+| [5章 JSP](servlet/05-jsp/README.md) | JSP で HTML を返す方法と、Servlet class から JSP へ値を渡す方法 |
+| [6章 入力を受け取り、結果を返す](servlet/06-input-and-redirect/README.md) | フォームの入力の受け取り方、リダイレクト、POST の二重送信の防ぎ方 |
 
-各トピックの `README.md` が目次です。
-
-## 教材の読み方
-
-- GitHub 上で Markdown のまま読めます。図も表示されます。
-- ブラウザで読みやすい HTML にしたいときは、`bin/build` でビルドし、`dist/<トピック>/index.html` を開きます。ビルドのしかたは「[執筆のための仕組み](#執筆のための仕組み)」を見てください。
-
-## 執筆のための仕組み
-
-ここからは、教材を書く・ビルドする人向けの説明です。
-
-教材を書くときのルール（想定する読者、説明の進め方など）は、`.claude/rules/` と各トピックの `.claude/rules/` に置いています。
-
-### ディレクトリ構成
-
-```text
-├─ servlet/, spring/  教材（トピックごとのディレクトリ。README.md が目次）
-├─ .claude/rules/     教材を書くときのルール
-├─ bin/build          ビルドスクリプト
-├─ bin/figures        HTML で書いた図を PNG にするスクリプト
-├─ build/
-│  ├─ links.lua       .md へのリンクを .html に置き換え、図に srcset を付ける pandoc フィルター
-│  ├─ mermaid.json    Mermaid の描画設定
-│  └─ style.css       HTML のスタイル
-├─ test/build.sh      ビルド結果のテスト
-├─ test/figures.sh    bin/figures のテスト
-├─ .puppeteerrc.cjs   mmdc と bin/figures が使う Chromium の設定
-└─ dist/              ビルドの出力先
-```
-
-### 書き方
-
-- 教材は、リポジトリ直下のトピックのディレクトリに置きます。直下の Markdown はビルドされません。
-- 下書きは `DRAFT` で始まる名前（`DRAFT-what-is-di.md` など）にします。下書きはビルドされません。
-- 図は Mermaid のコードブロックで書きます。流れや関係のように、箱と矢印で表せる図に向いています。
-- 位置や形を自分で決めたい図は、HTML で書いて PNG にします。詳しくは「HTML で書く図」を見てください。
-- 他の教材へのリンクは、`.md` ファイルへの相対パスで書きます。
-
-### HTML で書く図
-
-Mermaid では描きにくい図（文字列の一部に穴を開けて見せる図など）は、HTML と CSS で書き、PNG に変換して Markdown に取り込みます。
-
-1. 図を使う Markdown と同じディレクトリに `figures/` を作り、図の HTML を置く（例: `servlet/05-jsp/figures/template-slot.html`）
-2. HTML の中で、画像にしたい要素に `class="figure"` を付ける
-3. `bin/figures`（または `npm run figures`）を実行する。`figures/*.html` ごとに、同じ名前の PNG ができる。`bin/figures servlet/05-jsp/figures/template-slot.html` のようにファイルを指定すると、その図だけを作る
-4. Markdown から画像として読み込む（例: `![テンプレートの穴に値がはまる様子](figures/template-slot.png)`）
-5. HTML と PNG の両方をコミットする
-
-PNG は、`class="figure"` の要素だけを2倍の解像度で撮ったものです。ビルドでは、`figures/` の PNG に `srcset="… 2x"` を付けるので、ブラウザでは図の HTML で決めた大きさで表示されます。図の大きさを変えたいときは、図の HTML を直して作り直します。HTML を直したら、`bin/figures` で PNG を作り直してからコミットします。PNG もコミットするのは、GitHub で Markdown を見たときにも図が出るようにするためです。
-
-作り直し忘れは、`bin/figures --check` で見つけられます。PNG には元の HTML のハッシュ値が書き込んであり、今の HTML と合わない PNG と、元の HTML がない PNG を「古い PNG」として表示します。`npm test`（`test/figures.sh`）もこの確認を行い、端末から実行したときは、古い PNG を削除するかを y/n で聞きます。
-
-### 必要なもの
-
-- pandoc
-- Chromium（`/usr/bin/chromium`。場所が違う場合は `.puppeteerrc.cjs` を変更する）
-
-### ビルドのしかた
-
-```bash
-bin/build                  # すべてのトピックをビルドする
-bin/build servlet          # servlet/ だけをビルドする
-bin/build servlet spring   # 複数のトピックを指定する
-```
-
-`npm run build -- servlet` のように、npm からも指定できます。
-
-### ビルドの仕様
-
-教材の Markdown ごとに、次の処理を行います。
-
-1. Mermaid のコードブロックを SVG に変換する
-2. pandoc で HTML に変換し、`.md` へのリンクを `.html` に置き換える
-
-トピックの中の画像（`.png`、`.svg`、`.jpg`、`.gif`）は、同じ相対パスで `dist/` にコピーします。`figures/*.html` は図の元なので、コピーしません。
-
-`README.md` は `index.html` として出力します。
-
-ビルドのたびに出力を作り直します。トピックを指定しないときは `dist/` 全体を、指定したときは `dist/` の下のそのトピックのディレクトリだけを作り直します。
-
-`dist/` の下のトピックのディレクトリは、それだけで読めるように完結させます。
-
-```text
-dist/
-└─ servlet/
-   ├─ index.html
-   ├─ assets/style.css          トピックごとに同梱する CSS
-   └─ 05-jsp/
-      ├─ 01-what-is-jsp.html
-      └─ 01-what-is-jsp-1.svg   HTML と同じディレクトリに置く
-```
+前提とする環境（Tomcat 11、Java 17 以上など）と用語は、[目次](servlet/README.md)にまとめています。
