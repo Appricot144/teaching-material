@@ -32,7 +32,7 @@ Mermaid では描きにくい図（文字列の一部に穴を開けて見せる
 
 1. 図を使う Markdown と同じディレクトリに `figures/` を作り、図の HTML を置く（例: `servlet/05-jsp/figures/template-slot.html`）
 2. HTML の中で、画像にしたい要素に `class="figure"` を付ける
-3. `bin/figures`（または `npm run figures`）を実行する。`figures/*.html` ごとに、同じ名前の PNG ができる
+3. `bin/figures`（または `npm run figures`）を実行する。`figures/*.html` ごとに、同じ名前の PNG ができる。`bin/figures servlet/05-jsp/figures/template-slot.html` のようにファイルを指定すると、その図だけを作る
 4. Markdown から画像として読み込む（例: `![テンプレートの穴に値がはまる様子](figures/template-slot.png)`）
 5. HTML と PNG の両方をコミットする
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // 教材の figures/ ディレクトリにある HTML の図を、同じ名前の PNG に変換する。
 //
-//   bin/figures          すべての figures/*.html を PNG にする
-//   bin/figures --check  古い PNG（元の HTML が変わった、または元の HTML がない）を表示し、あれば失敗する
+//   bin/figures              すべての figures/*.html を PNG にする
+//   bin/figures FILE.html…   指定した figures/*.html だけを PNG にする（パスは作業ディレクトリから）
+//   bin/figures --check      古い PNG（元の HTML が変わった、または元の HTML がない）を表示し、あれば失敗する
 //
 // 図の HTML では、画像にしたい要素に class="figure" を付ける。その要素だけを、2倍の解像度で撮る。
 // できた PNG はコミットする（GitHub で Markdown を見たときにも図が出るように）。
@@ -92,6 +93,14 @@ function findStale() {
   });
 }
 
+// 指定されたファイルが、figures/ の中の存在する HTML かを確かめる。違えば理由を返す
+function invalidReason(file) {
+  if (!file.endsWith('.html')) return 'HTML ファイルではありません';
+  if (path.basename(path.dirname(file)) !== 'figures') return 'figures/ の中のファイルではありません';
+  if (!fs.existsSync(file)) return 'ファイルがありません';
+  return null;
+}
+
 function check() {
   const stale = findStale();
   for (const png of stale) console.log(path.relative(root, png));
@@ -104,7 +113,21 @@ async function main() {
     return;
   }
 
-  const figures = findInFigures(root, '.html').sort();
+  const args = process.argv.slice(2);
+  let figures;
+  if (args.length > 0) {
+    figures = args.map((arg) => path.resolve(arg));
+    // 1つでも図でないものがあれば、何も作らずに止める
+    const errors = figures
+      .map((file, i) => [args[i], invalidReason(file)])
+      .filter(([, reason]) => reason);
+    if (errors.length > 0) {
+      for (const [arg, reason] of errors) console.error(`${arg}: ${reason}`);
+      process.exit(1);
+    }
+  } else {
+    figures = findInFigures(root, '.html').sort();
+  }
   if (figures.length === 0) {
     console.log('図はありません');
     return;

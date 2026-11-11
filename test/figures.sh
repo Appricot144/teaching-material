@@ -49,6 +49,30 @@ fi
 
 [[ -e "$fixture/alpha/02-chapter/other.png" ]] && fail "figures/ の外の HTML から画像が作られた"
 
+# --- ファイルを指定して PNG を作る ---
+
+# 指定した図だけを作り、ほかの図には触れない
+cat > "$fixture/alpha/01-chapter/figures/two.html" <<'HTML'
+<!DOCTYPE html>
+<div class="figure" style="width: 100px; height: 40px">二つ目</div>
+HTML
+touch -d '2000-01-01 00:00:00' "$png"
+"$fixture/bin/figures" "$fixture/alpha/01-chapter/figures/two.html" > /dev/null || fail "ファイルを指定した bin/figures が失敗した"
+[[ -f "$fixture/alpha/01-chapter/figures/two.png" ]] || fail "指定した two.html の PNG が作られていない"
+[[ "$(stat -c %Y "$png")" == "$(date -d '2000-01-01 00:00:00' +%s)" ]] || fail "指定していない slot.png が作り直された"
+
+# 作業ディレクトリからの相対パスでも指定できる
+rm "$fixture/alpha/01-chapter/figures/two.png"
+(cd "$fixture/alpha/01-chapter" && "$fixture/bin/figures" figures/two.html > /dev/null) || fail "相対パスを指定した bin/figures が失敗した"
+[[ -f "$fixture/alpha/01-chapter/figures/two.png" ]] || fail "相対パスで指定した two.html の PNG が作られていない"
+
+# figures/ の HTML でないもの、存在しないものを指定すると、何も作らずに失敗する
+for bad in "$fixture/alpha/02-chapter/other.html" "$fixture/alpha/01-chapter/figures/nope.html" "$png"; do
+  "$fixture/bin/figures" "$bad" > /dev/null 2>&1 && fail "図ではない $bad を指定しても成功した"
+done
+[[ -e "$fixture/alpha/02-chapter/other.png" ]] && fail "figures/ の外の HTML から画像が作られた（指定したとき）"
+rm "$fixture/alpha/01-chapter/figures/two.html" "$fixture/alpha/01-chapter/figures/two.png"
+
 # --- 古い PNG を見つける（bin/figures --check） ---
 
 # 作ったばかりの PNG は古くない
