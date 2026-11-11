@@ -53,22 +53,56 @@ public class FruitServlet extends HttpServlet {
 
 ## JSP の各部分
 
-- `<%@ taglib prefix="c" uri="jakarta.tags.core" %>`: JSTL のタグを、`c:` を付けて使えるようにする
-- `<c:forEach items="${fruits}">`: `fruits` の中身を、1つずつ繰り返す
+- `<%@ taglib prefix="c" uri="jakarta.tags.core" %>`: `c:`という接頭辞の着いたタグをJSTL のタグとして認識するようにする
+- `<c:forEach items="${fruits}">`: `fruits` の中身を、1つずつとりだす
 - `var="fruit"`: 繰り返しのたびに、今の1つを `fruit` という名前で使えるようにする
 - `<c:out value="${fruit}" />`: `fruit` の値を、エスケープして表示する
 
 `<c:forEach>` は、Java の `for (String fruit : fruits)` と同じ働きをします。
 
-## `<c:out>` で表示する
+`${fruit}` とだけ書くと、値はエスケープされません。`<c:out>` を使うと、[4章4節](../04-html-response/04-xss-and-escaping.md) で見た XSS を防ぐエスケープをしてから表示します。入力された値を表示するときは、必ず `<c:out>` を使います。
 
-`${fruit}` とだけ書くと、値はエスケープされません。`<c:out>` を使うと、[XSS](../04-html-response/04-xss-and-escaping.md) を防ぐエスケープをしてから表示します。
+## `<c:forEach>` の中身は、繰り返すたびに出力される
 
-入力された値を表示するときは、必ず `<c:out>` を使います。
+`<c:forEach>` と `</c:forEach>` の間に書いた中身は、繰り返しのたびに1回ずつ出力され、`resp` に順に書き足されていきます。`<c:forEach>` のタグそのものは、出力されません。
 
-## JSTL をプロジェクトに入れる
+`fruits` が `りんご`、`みかん`、`ぶどう` のときは、次のように動きます。
 
-JSTL は Tomcat に入っていません。そのため、自分のアプリに入れます。Maven では、次のように依存関係に追加します。
+1. `fruit` に `りんご` を入れて、中身を出力する。`<li>りんご</li>` が書かれる
+2. `fruit` に `みかん` を入れて、もう一度中身を出力する。`<li>みかん</li>` が書き足される
+3. `fruit` に `ぶどう` を入れて、もう一度中身を出力する。`<li>ぶどう</li>` が書き足される
+
+[2節](02-jsp-to-servlet-class.md) で見た書き換えのイメージでいうと、中身を書く `out.write` が、Java の `for` の中に入る形です。
+
+```java
+for (String fruit : fruits) {
+    out.write("<li>");
+    out.write(/* エスケープした fruit */);
+    out.write("</li>");
+}
+```
+
+内側に書いたものは、何であっても繰り返されます。たとえば `<ul>` まで内側に書くと、`<ul>` も3回出力され、項目が1つずつのリストが3つできてしまいます。
+
+```html
+<ul><li>りんご</li></ul>
+<ul><li>みかん</li></ul>
+<ul><li>ぶどう</li></ul>
+```
+
+例の後に書いた「空行や空白が少し残る」のも、この仕組みのためです。中身に含まれる改行や字下げの空白も、繰り返しのたびに出力されます。
+
+## JSTL とは
+
+例で使った `<c:forEach>` や `<c:out>` は、JSTL（Jakarta Standard Tag Library）というタグの集まりの一部です。JSP でよく使う処理を、HTML のタグと同じ形で書けるようにしたものです。
+
+- `<c:forEach>`: 繰り返す
+- `<c:if>`: 条件に合うときだけ表示する
+- `<c:out>`: エスケープして表示する
+
+JSP の中に Java の `for` や `if` を書く代わりに、これらのタグを使います。そうすると、JSP の中身を HTML の形のまま保てます。
+
+JSTL は、JSP とは別の仕様として決まっていて、Tomcat には入っていません。そのため、自分のアプリに入れます。[2章2節](../02-servlet-and-tomcat/02-what-is-servlet.md) で Servlet API を入れたときと同じように、Maven の依存関係に追加します。
 
 ```xml
 <dependency>
@@ -82,6 +116,8 @@ JSTL は Tomcat に入っていません。そのため、自分のアプリに�
     <version>3.0.1</version>
 </dependency>
 ```
+
+1つ目は JSTL の API（取り決めを Java の型にしたもの）、2つ目はその実装です。[2章4節](../02-servlet-and-tomcat/04-relationships.md) で見た、Servlet API と Tomcat の関係と同じです。
 
 `jakarta.servlet-api` とは違い、`provided` は付けません。Tomcat が持っていないので、自分のアプリに入れて一緒に載せる必要があるからです。
 

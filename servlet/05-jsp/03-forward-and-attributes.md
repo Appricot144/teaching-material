@@ -1,8 +1,8 @@
 # Servlet class から JSP へどう処理と値を渡すのか
 
-> 疑問: Servlet class で用意した値を、JSP でどうやって使うのか。
+> 疑問: JSP も Servlet class になるなら、自分の Servlet class から、その JSP に処理を移すにはどうするのか。値はどうやって渡すのか。
 >
-> 答え: 値を `req.setAttribute()` で `req` に入れ、`forward()` で JSP に処理を引き継ぎます。JSP は、引き継いだ `req` から値を読みます。
+> 答え: `forward()` で、処理を JSP に引き継ぎます。値は `req` に入れておきます。`forward()` は `req` を JSP にそのまま渡すので、JSP はそこから値を読めます。
 
 ## 例
 
@@ -14,7 +14,7 @@ public class HelloServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.setAttribute("name", "太郎");
+        req.setAttribute("name", "taro");
         req.getRequestDispatcher("/WEB-INF/hello.jsp").forward(req, resp);
     }
 }
@@ -34,15 +34,16 @@ public class HelloServlet extends HttpServlet {
 
 `forward()` は `ServletException` を投げることがあるので、`throws` に足しています。
 
-## 値を `req` に入れる
-
-`req.setAttribute("name", "太郎")` は、`req` に「`name` という名前で `太郎`」という値を入れます。JSP の `${name}` は、この値を読みます。
-
-`req` に値を入れるのは、`req` がリクエストごとに別のオブジェクトだからです。たくさんの人が同時に開いても、値が他の人のものと混ざりません。
-
 ## 処理を JSP に引き継ぐ
 
-`forward()` は、処理を JSP に引き継ぐメソッドです。引き継ぐときに、`req` と `resp` をそのまま渡します。
+`forward()` は、リクエストの処理の続きを、別の Servlet class に引き継ぐメソッドです。リレーでバトンを渡すように、`req` と `resp` を JSP に渡し、続き（レスポンスを書くこと）を JSP にさせます。JSP も、[2節](02-jsp-to-servlet-class.md) で見たとおり Servlet class になるので、引き継ぐ相手にできます。
+
+例のコードの `req.getRequestDispatcher("/WEB-INF/hello.jsp").forward(req, resp)` は、2つのことをしています。
+
+- `getRequestDispatcher("/WEB-INF/hello.jsp")`: 引き継ぐ相手を指定して、その相手へ送り出すためのオブジェクト（`RequestDispatcher`）を受け取る。dispatch は「送り出す」という意味
+- `.forward(req, resp)`: そのオブジェクトを使って、`req` と `resp` を渡し、処理を引き継ぐ
+
+引き継ぐ相手は、アプリの中の場所で書きます。`/myapp` のようなコンテキストパスは書きません。
 
 - JSP は、受け取った `req` から値を読む
 - JSP は、受け取った `resp` に HTML を書く
@@ -51,7 +52,7 @@ public class HelloServlet extends HttpServlet {
 sequenceDiagram
     participant B as ブラウザ
     participant S as HelloServlet
-    participant J as hello.jsp
+    participant J as hello.jsp<br>(Servlet Class)
     B->>S: GET /hello
     S->>S: setAttribute() で値を入れる
     S->>J: forward(req, resp)
@@ -62,11 +63,15 @@ sequenceDiagram
 
 引き継ぎは Tomcat の中だけで起きます。ブラウザから見ると、リクエストは1回だけです。アドレス欄の URL も `/hello` のままです。
 
-## 引数で渡さない理由
+## 値を `req` に入れて渡す
 
-`forward()` の引数は、`req` と `resp` の2つと決まっています。他の値を引数として足すことはできません。
+`req.setAttribute("name", "taro")` は、`req` に「`name` という名前で `taro`」という値を置きます。JSP の `${name}` は、この値を読みます。
 
-そのため、渡したい値は `req` に入れて、`req` ごと渡します。
+値を `req` に入れるのには、2つの理由があります。
+
+1つ目は、JSP に渡せるのが `req` と `resp` だけだからです。JSP から作られたクラスのオブジェクトは Tomcat が持っていて、自分の Servlet class から直接メソッドを呼ぶことはできません。つなぐ手段は `forward()` だけで、`forward()` の引数は `req` と `resp` の2つと決まっています。そのため、渡したい値は、このどちらかに載せるしかありません。
+
+2つ目は、`req` が、1回のリクエストの間だけ値を置いておく場所だからです。`req` は、届いたリクエストの情報を読むためのオブジェクトですが、`setAttribute` で、自分で名前を付けた値を置くこともできます。`req` はリクエストごとに作られ、レスポンスを返すと捨てられます。そのため、置いた値はこのリクエストの中だけで使われ、他の人のリクエストと混ざりません。Servlet class のフィールドに置くと、[3章4節](../03-servlet-invocation/04-instance-and-threads.md) で見たように、他の人の値と混ざってしまいます。
 
 ## 名前のまちがいに気づきにくい
 
@@ -76,9 +81,29 @@ sequenceDiagram
 
 ## 気をつけること
 
-- `getRequestDispatcher` のパスは、アプリの中の場所で書く。`/myapp` のようなコンテキストパスは書かない
-- `forward()` の前に、ボディを書かない。書いた中身は捨てられる。送り始めていたら、エラーになる
+- `forward()` の前に、ボディを書かない。書いた中身は捨てられる。レスポンスを送ってから JSP に処理を移せばエラーになる
 - `forward()` のあとに、ボディを書かない。JSP が書き終わった時点で、レスポンスは送られている
+
+送り始めるタイミングは、[4章3節](../04-html-response/03-response-commit.md) で説明しました。
+
+> コラム: 引き継ぐ相手のパスの考え方
+>
+> `getRequestDispatcher` に渡すパスは、「そのパスを誰が読むか」で考えるとわかりやすくなります。
+>
+> このパスを読むのは Tomcat で、ブラウザには届きません。Tomcat は、すでに `myapp.war` の中でリクエストを処理しているので、どのアプリかはもうわかっています。そのため、パスにはアプリの中の場所だけを書きます。先頭の `/` は、WAR ファイルのいちばん上を表します。
+>
+> ```text
+> myapp.war                ← "/" はここ
+> ├─ hello.jsp             "/hello.jsp"
+> └─ WEB-INF/
+>    └─ hello.jsp          "/WEB-INF/hello.jsp"
+> ```
+>
+> `WEB-INF/` の中は、ブラウザからは開けませんが、ここでは指定できます。読むのが Tomcat だからです。
+>
+> 相手には、JSP のファイルだけでなく、`@WebServlet` で決めたパスも指定できます。たとえば `"/hello"` と書くと、`/hello` を受け持つ Servlet class に引き継ぎます。
+>
+> 一方、ブラウザが読むパスには、コンテキストパスが要ります。ブラウザはアプリの外にいて、どのアプリかを URL で伝える必要があるからです。[6章2節](../06-input-and-redirect/02-what-is-redirect.md) のリダイレクトでは、ブラウザに開き直してほしい URL を渡すので、`req.getContextPath()` でコンテキストパスを付けます。
 
 ---
 

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>テンプレートの穴に値がはまる様子</title>
+<style>
+  body { margin: 0; background: #fff; font-family: "Noto Sans CJK JP", sans-serif; color: #222; }
+  .figure { position: relative; display: inline-block; padding: 32px 40px 28px; background: #fff; }
+  .stage { display: flex; align-items: center; gap: 90px; }
+
+  /* テンプレートの紙 */
+  .paper-wrap { text-align: center; }
+  .paper-title { font-size: 15px; color: #555; margin-bottom: 8px; }
+  /* 紙全体を、変わらない部分の色でマスクする */
+  .paper { position: relative; background: #dfe3ea; border: 1px solid #b8bfcc; border-radius: 4px;
+           padding: 22px 26px; text-align: left; }
+  .line { font-family: "Noto Sans Mono CJK JP", monospace; font-size: 17px; line-height: 2.0;
+          white-space: pre; }
+  .fixed { color: #6b7280; }
+  /* 値を入れる場所は、マスクに開いた穴として別の色にする */
+  /* 値を入れる場所だけ、マスクに穴が開いている */
+  .slot { display: inline-block; min-width: 90px; text-align: center; border: 2px dashed #d4a000;
+          border-radius: 4px; background: #fff3b0; color: #8a6d00; font-weight: bold;
+          box-shadow: 0 0 0 4px #fff; }
+
+  /* 値のカード */
+  .value-wrap { text-align: center; }
+  .card { display: inline-block; font-family: "Noto Sans Mono CJK JP", monospace; font-size: 22px;
+          font-weight: bold; padding: 8px 22px; border: 2px solid #cc5555; border-radius: 6px;
+          background: #ffe0e0; }
+
+
+  svg.arrow { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+</style>
+</head>
+<body>
+<div class="figure" id="figure">
+  <div class="stage">
+    <div class="paper-wrap">
+      <div class="paper-title">テンプレート（JSP）</div>
+      <div class="paper">
+        <div class="line"><span class="fixed">&lt;!DOCTYPE html&gt;</span></div>
+        <div class="line"><span class="fixed">&lt;html lang="ja"&gt;</span></div>
+        <div class="line"><span class="fixed">&lt;body&gt;</span></div>
+        <div class="line">  <span class="fixed">&lt;h1&gt;こんにちは、</span><span class="slot" id="slot">${name}</span><span class="fixed">&lt;/h1&gt;</span></div>
+        <div class="line"><span class="fixed">&lt;/body&gt;</span></div>
+        <div class="line"><span class="fixed">&lt;/html&gt;</span></div>
+      </div>
+    </div>
+    <div class="value-wrap">
+      <div class="card" id="card">taro</div>
+    </div>
+  </div>
+  <svg class="arrow" id="arrow"></svg>
+</div>
+<script>
+  // 値のカードから、テンプレートの穴へ矢印を引く
+  const fig = document.getElementById('figure').getBoundingClientRect();
+  const card = document.getElementById('card').getBoundingClientRect();
+  const slot = document.getElementById('slot').getBoundingClientRect();
+  const x1 = card.left - fig.left - 4, y1 = card.top - fig.top + card.height / 2;
+  const x2 = slot.left - fig.left + slot.width / 2, y2 = slot.top - fig.top - 8;
+  const svg = document.getElementById('arrow');
+  svg.setAttribute('width', fig.width);
+  svg.setAttribute('height', fig.height);
+  svg.innerHTML = `
+    <defs><marker id="head" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#cc5555"/></marker></defs>
+    <path d="M${x1},${y1} C${x1 - 120},${y1 - 30} ${x2},${y2 - 90} ${x2},${y2}"
+          stroke="#cc5555" stroke-width="3" fill="none" marker-end="url(#head)"/>`;
+</script>
+</body>
+</html>
